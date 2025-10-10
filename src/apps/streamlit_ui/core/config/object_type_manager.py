@@ -112,13 +112,16 @@ class ObjectTypeManager:
         """Build JPAPI command for object type - eliminates repetitive if/elif chains"""
         jpapi_command = self.get_jpapi_command(object_type)
 
+        # Split command if it contains spaces (e.g., "macos profiles" -> ["macos", "profiles"])
+        command_parts = jpapi_command.split()
+
         return [
             "python3",
             "src/jpapi_main.py",
             "--env",
             environment,
             "export",
-            jpapi_command,
+            *command_parts,  # Unpack the command parts
             "--format",
             format_type,
         ]

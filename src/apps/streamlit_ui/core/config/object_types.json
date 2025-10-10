@@ -128,8 +128,10 @@
             "display_name": "Configuration Profiles",
             "icon": "\u2699\ufe0f",
             "description": "macOS and iOS configuration profiles",
-            "jpapi_command": "profiles",
+            "jpapi_command": "macos profiles",
             "file_patterns": [
+                "{environment}-macos-profiles-export-*.csv",
+                "macos-profiles-export-*.csv",
                 "{environment}-profiles-export-*.csv",
                 "profiles-export-*.csv"
             ],
@@ -252,6 +254,8 @@
             "description": "Computer groups and smart groups",
             "jpapi_command": "computer groups",
             "file_patterns": [
+                "{environment}-computer-groups-export-*.csv",
+                "computer-groups-export-*.csv",
                 "{environment}-groups-export-*.csv",
                 "groups-export-*.csv"
             ],
