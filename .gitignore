@@ -35,18 +35,23 @@ storage/cache/
 *_manifest*.json
 *_manifest*.csv
 
-# Credentials and authentication
+# Credentials and authentication files (not the auth code!)
 *.key
 *.pem
 *.p12
 *.pfx
 *credentials*
 *secret*
-*auth*
 *jwt*
 *token*
 *.env
 .env.*
+
+# Allow auth code but block credential files
+!src/core/auth/
+src/core/auth/*credentials*
+src/core/auth/*secret*
+resources/config/authentication.json
 
 # Configuration files with sensitive data
 jpapidev.config
