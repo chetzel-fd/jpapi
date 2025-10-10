@@ -39,6 +39,10 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
 # Check permissions
 check_permissions() {
     print_info "Checking permissions..."
