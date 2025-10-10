@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SOLID-Compliant Interfaces for Authentication System
-Defines clear, focused interfaces following SOLID principles
+Authentication Interfaces
+Defines focused interfaces for JAMF Pro authentication
 """
 
 from abc import ABC, abstractmethod

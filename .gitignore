@@ -9,13 +9,16 @@
 # =============================================================================
 
 # Exported data from JAMF (contains company-specific information)
-exports/
-policies_files/
+/exports/
+/policies_files/
 tmp/
 temp/
 cache/
 .cache/
 logs/
+
+# Allow src/lib/exports code but block data exports
+!src/lib/exports/
 
 # Storage directories with company data
 storage/

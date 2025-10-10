@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SOLID-Compliant Implementations
-Each class has a single responsibility and implements focused interfaces
+Authentication Components
+Modular authentication implementations for JAMF Pro
 """
 
 import subprocess
@@ -14,7 +14,7 @@ import base64
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List, Any
 
-from .solid_interfaces import (
+from .auth_interfaces import (
     IInstanceManager, ICredentialStorage, IConnectionTester, 
     ITokenManager, IAPIClient, ICredentialMigrator, JAMFInstance
 )
