@@ -1,0 +1,14 @@
+{
+    "default": "dev",
+    "available": [
+        "dev",
+        "staging",
+        "prod",
+        "test"
+    ],
+    "aliases": {
+        "development": "dev",
+        "production": "prod",
+        "testing": "test"
+    }
+}

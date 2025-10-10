@@ -1,0 +1,18 @@
+{
+  "default_export_directory": "data/exports",
+  "default_export_format": "csv",
+  "include_metadata": true,
+  "include_timestamps": true,
+  "available_formats": [
+    "csv",
+    "json",
+    "xlsx",
+    "xml",
+    "yaml"
+  ],
+  "export_compression": false,
+  "export_encryption": false,
+  "auto_create_directories": true,
+  "overwrite_existing": false,
+  "export_batch_size": 1000
+}

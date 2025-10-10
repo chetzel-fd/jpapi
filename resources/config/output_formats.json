@@ -1,0 +1,20 @@
+{
+    "data_formats": [
+        "table",
+        "json",
+        "csv",
+        "yaml"
+    ],
+    "status_options": [
+        "enabled",
+        "disabled",
+        "all"
+    ],
+    "filter_types": [
+        "wildcard",
+        "regex",
+        "exact",
+        "contains"
+    ],
+    "default_format": "csv"
+}

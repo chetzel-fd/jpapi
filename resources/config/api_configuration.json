@@ -1,0 +1,13 @@
+{
+  "max_retries": 3,
+  "retry_delay": 1,
+  "request_timeout": 30,
+  "connection_pool_size": 10,
+  "rate_limit_enabled": true,
+  "rate_limit_requests_per_minute": 60,
+  "rate_limit_burst_size": 10,
+  "auto_retry_failed_requests": true,
+  "cache_api_responses": true,
+  "follow_redirects": true,
+  "verify_ssl": true
+}

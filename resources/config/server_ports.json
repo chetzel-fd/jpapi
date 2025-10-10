@@ -1,0 +1,7 @@
+{
+  "backend_fast": 8601,
+  "backend_enhanced": 8900,
+  "redis": 6379,
+  "dashboard": 5000,
+  "api_docs": 8080
+}
