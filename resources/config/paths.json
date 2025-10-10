@@ -1,7 +1,0 @@
-{
-    "cache_dir": "~/.jpapi/cache",
-    "config_dir": "~/.jpapi",
-    "data_dir": "~/.jpapi/data",
-    "logs_dir": "~/.jpapi/logs",
-    "temp_dir": "~/.jpapi/temp"
-}
