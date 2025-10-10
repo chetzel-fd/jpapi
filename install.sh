@@ -45,22 +45,22 @@ print_info() {
 
 # Check permissions
 check_permissions() {
-    print_info "Checking permissions..."
+    echo -e "${BLUE}ℹ️  Checking permissions...${NC}"
     
     # Check if we can write to home directory
     if [ ! -w "$HOME" ]; then
-        print_error "Cannot write to home directory: $HOME"
-        print_error "Please check file ownership and permissions"
+        echo -e "${RED}❌ Cannot write to home directory: $HOME${NC}"
+        echo -e "${RED}❌ Please check file ownership and permissions${NC}"
         exit 1
     fi
     
     # Check if we can create .local/bin directory
     if [ ! -w "$HOME" ] && [ ! -d "$HOME/.local" ]; then
-        print_error "Cannot create ~/.local directory"
+        echo -e "${RED}❌ Cannot create ~/.local directory${NC}"
         exit 1
     fi
     
-    print_success "Permissions look good"
+    echo -e "${GREEN}✅ Permissions look good${NC}"
 }
 
 # Check if Python 3 is available
