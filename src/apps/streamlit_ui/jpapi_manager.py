@@ -194,92 +194,140 @@ st.markdown(
         box-shadow: 0 6px 16px rgba(51, 147, 255, 0.4);
     }
     
-    /* Floating submenu */
-    .floating-submenu {
+    /* Enhanced floating settings dialog - positioned next to stat window */
+    .floating-settings-dialog {
         position: fixed;
-        bottom: 80px;
-        right: 20px;
+        top: 20px;
+        right: 280px; /* Position next to the floating metrics */
         background: #00143b;
         border: 1px solid #334977;
         border-radius: 12px;
-        padding: 20px;
         z-index: 1001;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        min-width: 280px;
-        max-width: 320px;
+        min-width: 300px;
+        max-width: 350px;
+        animation: slideIn 0.3s ease-out;
     }
     
-    .submenu-content h3 {
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .settings-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 12px 12px 0 0;
+        padding: 12px 16px;
+        border-bottom: 1px solid #334977;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .settings-icon {
+        font-size: 16px;
+        color: #3393ff;
+    }
+    
+    .settings-title {
         color: #ffffff;
-        margin: 0 0 16px 0;
         font-size: 16px;
         font-weight: 600;
     }
     
-    .submenu-section {
+    .settings-content {
+        padding: 16px;
+    }
+    
+    .settings-info {
         margin-bottom: 16px;
     }
     
-    .submenu-section label {
-        display: block;
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(51, 73, 119, 0.3);
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
         color: #b9c4cb;
         font-size: 12px;
         font-weight: 500;
-        margin-bottom: 6px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     
-    .submenu-section select {
-        width: 100%;
-        background: #252729;
-        border: 1px solid #334977;
-        border-radius: 6px;
+    .info-value {
         color: #ffffff;
-        padding: 8px 12px;
-        font-size: 14px;
-        outline: none;
-        transition: all 0.2s ease;
+        font-size: 13px;
+        font-weight: 600;
     }
     
-    .submenu-section select:focus {
-        border-color: #3393ff;
-        box-shadow: 0 0 0 2px rgba(51, 147, 255, 0.2);
-    }
-    
-    .submenu-actions {
+    .settings-actions {
         display: flex;
         gap: 8px;
-        flex-wrap: wrap;
         margin-top: 16px;
         padding-top: 16px;
         border-top: 1px solid #334977;
     }
     
-    .submenu-btn {
-        background: #3393ff;
+    .action-btn {
         border: none;
         border-radius: 6px;
-        color: white;
-        padding: 6px 12px;
+        padding: 8px 12px;
         font-size: 12px;
+        font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
         flex: 1;
-        min-width: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
     }
     
-    .submenu-btn:hover {
+    .action-btn.primary {
+        background: #3393ff;
+        color: white;
+    }
+    
+    .action-btn.primary:hover {
         background: #1a86ff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(51, 147, 255, 0.3);
+    }
+    
+    .action-btn.secondary {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .action-btn.secondary:hover {
+        background: #4b5563;
         transform: translateY(-1px);
     }
     
-    .submenu-btn.close {
-        background: #6b7280;
+    .action-btn.danger {
+        background: #ef4444;
+        color: white;
     }
     
-    .submenu-btn.close:hover {
-        background: #4b5563;
+    .action-btn.danger:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
     </style>
     """,
@@ -633,24 +681,38 @@ def main():
             unsafe_allow_html=True,
         )
 
-    # Floating submenu - compact settings
+    # Enhanced floating settings dialog - positioned next to stat window
     if st.session_state.get("show_settings", False):
-        # Create a compact floating settings panel
         st.markdown(
             f"""
-        <div class="floating-submenu">
-            <div class="submenu-content">
-                <h3>⚙️ Settings</h3>
-                <div class="submenu-section">
-                    <label>Environment: {st.session_state.current_environment.upper()}</label>
+        <div class="floating-settings-dialog">
+            <div class="settings-header">
+                <span class="settings-icon">⚙️</span>
+                <span class="settings-title">Settings</span>
+            </div>
+            <div class="settings-content">
+                <div class="settings-info">
+                    <div class="info-row">
+                        <span class="info-label">Environment:</span>
+                        <span class="info-value">{st.session_state.current_environment.upper()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Object Type:</span>
+                        <span class="info-value">{st.session_state.current_object_type.title()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Items:</span>
+                        <span class="info-value">{total_count}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Selected:</span>
+                        <span class="info-value">{selected_count}</span>
+                    </div>
                 </div>
-                <div class="submenu-section">
-                    <label>Object Type: {st.session_state.current_object_type.title()}</label>
-                </div>
-                <div class="submenu-actions">
-                    <button onclick="window.location.reload()" class="submenu-btn">🔄 Refresh</button>
-                    <button onclick="window.location.reload()" class="submenu-btn">🗑️ Clear</button>
-                    <button onclick="window.location.reload()" class="submenu-btn close">✕ Close</button>
+                <div class="settings-actions">
+                    <button class="action-btn primary" onclick="window.location.reload()">🔄 Refresh</button>
+                    <button class="action-btn secondary" onclick="window.location.reload()">🗑️ Clear</button>
+                    <button class="action-btn danger" onclick="window.location.reload()">✕ Close</button>
                 </div>
             </div>
         </div>
@@ -658,11 +720,12 @@ def main():
             unsafe_allow_html=True,
         )
         
-        # Add quick action buttons below the floating submenu
-        col1, col2, col3, col4 = st.columns(4)
+        # Functional buttons below the floating dialog
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 Refresh", key="quick_refresh", help="Refresh data cache"):
+            if st.button("🔄 Refresh Data", key="settings_refresh", help="Clear data cache and reload"):
                 for key in list(st.session_state.keys()):
                     if key.startswith("data_"):
                         del st.session_state[key]
@@ -670,15 +733,23 @@ def main():
                 st.rerun()
         
         with col2:
-            if st.button("🗑️ Clear All", key="quick_clear", help="Clear all selections"):
+            if st.button("🗑️ Clear All", key="settings_clear", help="Clear all selections"):
                 st.session_state.selected_objects.clear()
                 st.session_state.deleted_objects.clear()
                 st.success("✅ All selections cleared")
                 st.rerun()
         
         with col3:
-            if st.button("⚙️ Environment", key="quick_env", help="Change environment"):
-                # Cycle through environments
+            if st.button("✕ Close", key="settings_close", help="Close settings"):
+                st.session_state.show_settings = False
+                st.rerun()
+        
+        # Environment and Object Type cycling
+        st.markdown("**Quick Actions**")
+        col4, col5 = st.columns(2)
+        
+        with col4:
+            if st.button("🔄 Cycle Environment", key="cycle_env", help="Cycle through environments"):
                 envs = ["sandbox", "production", "staging"]
                 current_idx = envs.index(st.session_state.current_environment)
                 next_idx = (current_idx + 1) % len(envs)
@@ -687,11 +758,11 @@ def main():
                 for key in list(st.session_state.keys()):
                     if key.startswith("data_"):
                         del st.session_state[key]
+                st.success(f"✅ Switched to {envs[next_idx].upper()}")
                 st.rerun()
         
-        with col4:
-            if st.button("📋 Object Type", key="quick_type", help="Change object type"):
-                # Cycle through object types
+        with col5:
+            if st.button("📋 Cycle Object Type", key="cycle_type", help="Cycle through object types"):
                 types = ["searches", "policies", "profiles", "packages", "groups"]
                 current_idx = types.index(st.session_state.current_object_type)
                 next_idx = (current_idx + 1) % len(types)
@@ -700,6 +771,7 @@ def main():
                 for key in list(st.session_state.keys()):
                     if key.startswith("data_"):
                         del st.session_state[key]
+                st.success(f"✅ Switched to {types[next_idx].title()}")
                 st.rerun()
 
     # Show data source info
