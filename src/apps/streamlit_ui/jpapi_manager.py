@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="JPAPI Manager",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # Custom CSS for dark theme and styling
@@ -426,16 +426,66 @@ def main():
         unsafe_allow_html=True,
     )
 
-    # Floating action buttons
-    st.markdown(
-        """
-    <div class="floating-actions">
-        <button class="floating-btn" onclick="document.querySelector('[data-testid=\\"baseButton-secondary\\"]').click()" title="Settings">⚙️</button>
-        <button class="floating-btn" onclick="document.querySelector('[data-testid=\\"baseButton-secondary\\"]').click()" title="Gather Data">📥</button>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    # Floating action buttons - functional
+    with st.container():
+        # Create invisible columns to position buttons
+        col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+        
+        with col5:
+            # Settings button
+            if st.button("⚙️", key="floating_settings", help="Settings"):
+                st.session_state.show_settings = not st.session_state.get('show_settings', False)
+                st.rerun()
+            
+            # Gather Data button  
+            if st.button("📥", key="floating_gather", help="Gather Data"):
+                with st.spinner("Gathering fresh data with jpapi..."):
+                    try:
+                        import subprocess
+                        import os
+                        from core.config.object_type_manager import ObjectTypeManager
+                        
+                        object_manager = ObjectTypeManager()
+                        cmd = object_manager.build_jpapi_command(
+                            st.session_state.current_object_type,
+                            st.session_state.current_environment,
+                            "csv",
+                        )
+                        
+                        st.info(f"Running: {' '.join(cmd)}")
+                        result = subprocess.run(
+                            cmd, capture_output=True, text=True, cwd=os.getcwd()
+                        )
+                        
+                        if result.returncode == 0:
+                            st.success("✅ Data gathered successfully!")
+                            # Clear cache to force reload
+                            cache_key = f"data_{st.session_state.current_object_type}_{st.session_state.current_environment}"
+                            if cache_key in st.session_state:
+                                del st.session_state[cache_key]
+                            st.rerun()
+                        else:
+                            st.error(f"❌ Error gathering data: {result.stderr}")
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
+            
+            # Export Selected button
+            if st.button("📤", key="floating_export", help="Export Selected"):
+                if st.session_state.selected_objects:
+                    st.success(f"✅ Exporting {len(st.session_state.selected_objects)} selected items...")
+                    # Add export logic here
+                else:
+                    st.warning("⚠️ No items selected for export")
+            
+            # Delete Selected button
+            if st.button("🗑️", key="floating_delete", help="Delete Selected"):
+                if st.session_state.selected_objects:
+                    st.session_state.deleted_objects.update(st.session_state.selected_objects)
+                    st.session_state.selected_objects.clear()
+                    st.success(f"✅ Moved {len(st.session_state.selected_objects)} items to deleted")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ No items selected for deletion")
 
     # Main header with title and compact buttons - no spacing
     header_col1, header_col2 = st.columns([3, 1])
@@ -476,143 +526,7 @@ def main():
             unsafe_allow_html=True,
         )
 
-        # Add buttons inside the header
-        btn_col1, btn_col2, btn_col3 = st.columns(3)
-
-        with btn_col1:
-            if st.button(
-                "📥 Gather Data", key="header_gather", use_container_width=True
-            ):
-                # Use jpapi to gather fresh data - simple approach
-                with st.spinner("Gathering fresh data with jpapi..."):
-                    try:
-                        import subprocess
-                        import os
-
-                        # Build command using scalable configuration
-                        from core.config.object_type_manager import ObjectTypeManager
-
-                        object_manager = ObjectTypeManager()
-                        cmd = object_manager.build_jpapi_command(
-                            st.session_state.current_object_type,
-                            st.session_state.current_environment,
-                            "csv",
-                        )
-
-                        # Run the command
-                        st.info(f"Running: {' '.join(cmd)}")
-                        result = subprocess.run(
-                            cmd, capture_output=True, text=True, cwd=os.getcwd()
-                        )
-
-                        if result.returncode == 0:
-                            st.success(
-                                f"✅ Successfully gathered {st.session_state.current_object_type} data!"
-                            )
-
-                            # Add success notification
-                            if "notifications" not in st.session_state:
-                                st.session_state.notifications = []
-                            st.session_state.notifications.append(
-                                {
-                                    "type": "success",
-                                    "message": f"✅ Successfully gathered {st.session_state.current_object_type} data!",
-                                    "timestamp": pd.Timestamp.now(),
-                                }
-                            )
-
-                            # Clear cache to force reload
-                            for key in list(st.session_state.keys()):
-                                if key.startswith("data_"):
-                                    del st.session_state[key]
-                            st.rerun()
-                        else:
-                            st.error(f"❌ Failed to gather data: {result.stderr}")
-
-                            # Add error notification
-                            if "notifications" not in st.session_state:
-                                st.session_state.notifications = []
-                            st.session_state.notifications.append(
-                                {
-                                    "type": "error",
-                                    "message": f"❌ Failed to gather data: {result.stderr}",
-                                    "timestamp": pd.Timestamp.now(),
-                                }
-                            )
-                            st.session_state.notifications.append(
-                                {
-                                    "type": "info",
-                                    "message": "💡 Make sure jpapi is configured and authenticated",
-                                    "timestamp": pd.Timestamp.now(),
-                                }
-                            )
-
-                    except Exception as e:
-                        st.error(f"❌ Error running jpapi: {e}")
-
-                        # Add error notification
-                        if "notifications" not in st.session_state:
-                            st.session_state.notifications = []
-                        st.session_state.notifications.append(
-                            {
-                                "type": "error",
-                                "message": f"❌ Error running jpapi: {e}",
-                                "timestamp": pd.Timestamp.now(),
-                            }
-                        )
-                        st.session_state.notifications.append(
-                            {
-                                "type": "info",
-                                "message": "💡 Make sure jpapi_main.py exists and is executable",
-                                "timestamp": pd.Timestamp.now(),
-                            }
-                        )
-
-        with btn_col2:
-            if st.button(
-                "📊 Export Selected", key="header_export", use_container_width=True
-            ):
-                if st.session_state.selected_objects:
-                    st.success(
-                        f"✅ Exported {len(st.session_state.selected_objects)} selected objects"
-                    )
-                    # Add export notification
-                    if "notifications" not in st.session_state:
-                        st.session_state.notifications = []
-                    st.session_state.notifications.append(
-                        {
-                            "type": "success",
-                            "message": f"✅ Exported {len(st.session_state.selected_objects)} selected objects",
-                            "timestamp": pd.Timestamp.now(),
-                        }
-                    )
-                else:
-                    st.warning("⚠️ No objects selected for export")
-                    # Add warning notification
-                    if "notifications" not in st.session_state:
-                        st.session_state.notifications = []
-                    st.session_state.notifications.append(
-                        {
-                            "type": "warning",
-                            "message": "⚠️ No objects selected for export",
-                            "timestamp": pd.Timestamp.now(),
-                        }
-                    )
-
-        with btn_col3:
-            if st.button(
-                "🗑️ Delete Selected", key="header_delete", use_container_width=True
-            ):
-                if st.session_state.selected_objects:
-                    for obj_id in st.session_state.selected_objects:
-                        st.session_state.deleted_objects.add(obj_id)
-                    st.session_state.selected_objects.clear()
-                    st.success(
-                        f"✅ Moved {len(st.session_state.selected_objects)} objects to deleted"
-                    )
-                    st.rerun()
-                else:
-                    st.warning("⚠️ No objects selected for deletion")
+        # Clean header without old buttons - functionality moved to floating buttons
 
         st.markdown(
             """
@@ -622,6 +536,60 @@ def main():
         """,
             unsafe_allow_html=True,
         )
+
+    # Settings panel
+    if st.session_state.get('show_settings', False):
+        with st.expander("⚙️ Settings", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Environment")
+                new_env = st.selectbox(
+                    "Select Environment",
+                    ["sandbox", "production", "staging"],
+                    index=["sandbox", "production", "staging"].index(st.session_state.current_environment)
+                )
+                if new_env != st.session_state.current_environment:
+                    st.session_state.current_environment = new_env
+                    # Clear cache when environment changes
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("data_"):
+                            del st.session_state[key]
+                    st.rerun()
+            
+            with col2:
+                st.subheader("Object Type")
+                new_type = st.selectbox(
+                    "Select Object Type",
+                    ["searches", "policies", "profiles", "packages", "groups"],
+                    index=["searches", "policies", "profiles", "packages", "groups"].index(st.session_state.current_object_type)
+                )
+                if new_type != st.session_state.current_object_type:
+                    st.session_state.current_object_type = new_type
+                    # Clear cache when object type changes
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("data_"):
+                            del st.session_state[key]
+                    st.rerun()
+            
+            st.divider()
+            
+            col3, col4 = st.columns(2)
+            with col3:
+                if st.button("🔄 Refresh Data", key="settings_refresh"):
+                    # Clear all data cache
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("data_"):
+                            del st.session_state[key]
+                    st.success("✅ Data cache cleared")
+                    st.rerun()
+            
+            with col4:
+                if st.button("🗑️ Clear All Selections", key="settings_clear"):
+                    st.session_state.selected_objects.clear()
+                    st.session_state.deleted_objects.clear()
+                    st.success("✅ All selections cleared")
+                    st.rerun()
 
     # Show data source info
     if len(data) > 0 and data.iloc[0]["Name"].startswith("Sample"):
