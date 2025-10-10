@@ -1,0 +1,225 @@
+#!/bin/bash
+#
+# JPAPI - JAMF Pro API Command Line Interface
+# Enhanced wrapper around jpapi with additional script export capabilities
+#
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Environment alias mapping
+resolve_environment_alias() {
+    local env="$1"
+    case "$env" in
+        "prd"|"prod")
+            echo "production"
+            ;;
+        "sbo"|"sbox")
+            echo "sandbox"
+            ;;
+        *)
+            echo "$env"
+            ;;
+    esac
+}
+
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root (parent of bin directory)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PYTHON_CLI="$PROJECT_ROOT/src/jpapi_main.py"
+
+# Default environment
+ENV="dev"
+DEBUG="false"
+EXPERIMENTAL="false"
+
+show_help() {
+    echo -e "${GREEN}📱 JPAPI - JAMF Pro API Command Line Interface${NC}"
+    echo -e "${BLUE}Enhanced wrapper around jpapi with comprehensive script export${NC}"
+    echo
+    echo "🚀 Available Commands:"
+    echo
+    echo -e "${GREEN}🔹 Core Operations:${NC}"
+    echo "   list <type>           # List JAMF objects (devices, policies, scripts, etc.)"
+    echo "   export <type>         # Export data with comprehensive processing"
+    echo "   search <type>         # Advanced search capabilities"
+    echo "   devices <action>      # Device management operations"
+    echo "   info <type>           # Information and help"
+    echo "   status                # System status check"
+    echo
+    echo -e "${YELLOW}🔹 Enhanced Script Management:${NC}"
+    echo "   scripts download      # Download all scripts with metadata"
+    echo "   scripts backup        # Create complete script backup"
+    echo "   scripts migrate       # Migrate scripts between environments"
+    echo "   scripts info          # Show script management information"
+    echo
+    echo -e "${BLUE}🔹 Advanced Features:${NC}"
+    echo "   analyze <type>        # Analysis and relationships"
+    echo "   tools <tool>          # Advanced tools and utilities"
+    echo "   launch <interface>    # Launch web interfaces"
+    echo "   create <type>         # Create new JAMF objects"
+    echo "   move <type>           # Move objects between categories/groups"
+    echo
+    echo "💡 Export Examples:"
+    echo "   jpapi export policies --env sandbox --format csv     # Export policies with timestamp"
+    echo "   jpapi export scripts --format csv                    # Export all scripts to CSV"
+    echo "   jpapi export scripts --name '*Chrome*' --format csv  # Export specific scripts"
+    echo "   jpapi export scripts --category 'Software'           # Export by category"
+    echo "   jpapi scripts download --output-dir ~/Downloads/     # Download to specific directory"
+    echo "   jpapi scripts backup --backup                        # Create timestamped backup"
+    echo
+    echo "🌍 Environments: --env dev|prod (default: dev)"
+    echo "🧪 Experimental: --experimental (enables unstable features)"
+    echo "🔧 Debug: --debug (enables verbose output)"
+    echo
+    echo "📋 Quick Reference:"
+    echo "   jpapi list scripts                    # List all scripts"
+    echo "   jpapi export scripts --format csv     # Export with file paths"
+    echo "   jpapi scripts download                # Download all scripts"
+    echo "   jpapi status                          # Check system status"
+}
+
+# Parse global flags and store remaining arguments
+ARGS=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --env)
+            ENV=$(resolve_environment_alias "$2")
+            shift 2
+            ;;
+        --experimental)
+            EXPERIMENTAL="true"
+            shift
+            ;;
+        --debug)
+            DEBUG="true"
+            shift
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --version)
+            echo "jpapi 1.2.0 (hybrid bash/Python architecture)"
+            exit 0
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Enhanced script export functionality
+enhanced_script_export() {
+    local format="${1:-csv}"
+    local filter="${2:-}"
+    local output="${3:-}"
+    
+    echo -e "${GREEN}📤 Enhanced Script Export${NC}"
+    echo -e "${BLUE}Exporting scripts with comprehensive data and file paths${NC}"
+    echo
+    
+    # Build command arguments
+    local args=("export" "scripts" "--format" "$format" "--include-content")
+    
+    if [[ -n "$filter" ]]; then
+        args+=("--name" "$filter")
+    fi
+    
+    if [[ -n "$output" ]]; then
+        args+=("--output" "$output")
+    fi
+    
+    # Execute the enhanced export
+    python3 "$PYTHON_CLI" --env "$ENV" "${args[@]}"
+}
+
+# Main command routing
+main() {
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 0
+    fi
+    
+    local command="$1"
+    shift
+    
+    case "$command" in
+        "scripts")
+            # Enhanced script management
+            if [[ "$1" == "download" ]]; then
+                shift
+                echo -e "${GREEN}📥 Enhanced Script Download${NC}"
+                python3 "$PYTHON_CLI" --env "$ENV" scripts download "$@"
+            elif [[ "$1" == "backup" ]]; then
+                shift
+                echo -e "${GREEN}💾 Script Backup${NC}"
+                python3 "$PYTHON_CLI" --env "$ENV" scripts backup "$@"
+            elif [[ "$1" == "migrate" ]]; then
+                shift
+                echo -e "${GREEN}🔄 Script Migration${NC}"
+                python3 "$PYTHON_CLI" --env "$ENV" scripts migrate "$@"
+            elif [[ "$1" == "info" ]]; then
+                shift
+                echo -e "${GREEN}ℹ️  Script Information${NC}"
+                python3 "$PYTHON_CLI" --env "$ENV" scripts info "$@"
+            else
+                echo -e "${RED}❌ Unknown scripts command: $1${NC}"
+                echo "Available: download, backup, migrate, info"
+                exit 1
+            fi
+            ;;
+        "export")
+            # Enhanced export with special handling for scripts
+            if [[ "$1" == "scripts" ]]; then
+                shift
+                local format="csv"
+                local filter=""
+                local output=""
+                
+                # Parse export arguments
+                while [[ $# -gt 0 ]]; do
+                    case $1 in
+                        --format)
+                            format="$2"
+                            shift 2
+                            ;;
+                        --name)
+                            filter="$2"
+                            shift 2
+                            ;;
+                        --output)
+                            output="$2"
+                            shift 2
+                            ;;
+                        *)
+                            shift
+                            ;;
+                    esac
+                done
+                
+                enhanced_script_export "$format" "$filter" "$output"
+            else
+                # Delegate other exports to jpapi
+                python3 "$PYTHON_CLI" --env "$ENV" export "$@"
+            fi
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            # Delegate all other commands to jpapi
+            python3 "$PYTHON_CLI" --env "$ENV" "$command" "$@"
+            ;;
+    esac
+}
+
+# Run main function with remaining arguments
+main "${ARGS[@]}"

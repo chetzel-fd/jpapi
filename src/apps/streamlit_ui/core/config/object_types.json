@@ -1,0 +1,411 @@
+{
+    "object_types": {
+        "searches": {
+            "display_name": "Advanced Searches",
+            "icon": "\ud83d\udd0d",
+            "description": "Advanced computer and mobile device searches",
+            "jpapi_command": "advanced-searches",
+            "file_patterns": [
+                "{environment}-advanced-searches-export-*.csv",
+                "{environment}-searches-export-*.csv",
+                "advanced-searches-export-*.csv",
+                "searches-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "All Macs",
+                    "Active Computers",
+                    "Software Inventory",
+                    "Mobile Devices",
+                    "Recent Logins"
+                ],
+                "Smart": [
+                    true,
+                    true,
+                    false,
+                    true,
+                    false
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Smart Group",
+                    "Smart Group",
+                    "Static Group",
+                    "Smart Group",
+                    "Static Group"
+                ]
+            }
+        },
+        "policies": {
+            "display_name": "Policies",
+            "icon": "\ud83d\udccb",
+            "description": "JAMF Pro policies and configuration",
+            "jpapi_command": "policies",
+            "file_patterns": [
+                "{environment}-policies-export-*.csv",
+                "policies-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "Software Update Policy",
+                    "Security Configuration",
+                    "Application Deployment",
+                    "System Maintenance",
+                    "User Training"
+                ],
+                "Smart": [
+                    false,
+                    true,
+                    false,
+                    true,
+                    false
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Policy",
+                    "Policy",
+                    "Policy",
+                    "Policy",
+                    "Policy"
+                ]
+            }
+        },
+        "profiles": {
+            "display_name": "Configuration Profiles",
+            "icon": "\u2699\ufe0f",
+            "description": "macOS and iOS configuration profiles",
+            "jpapi_command": "profiles",
+            "file_patterns": [
+                "{environment}-profiles-export-*.csv",
+                "profiles-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "WiFi Configuration",
+                    "VPN Settings",
+                    "Email Configuration",
+                    "Security Policies",
+                    "App Restrictions"
+                ],
+                "Smart": [
+                    true,
+                    false,
+                    true,
+                    false,
+                    true
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Configuration Profile",
+                    "Configuration Profile",
+                    "Configuration Profile",
+                    "Configuration Profile",
+                    "Configuration Profile"
+                ]
+            }
+        },
+        "packages": {
+            "display_name": "Packages",
+            "icon": "\ud83d\udce6",
+            "description": "Software packages and installers",
+            "jpapi_command": "packages",
+            "file_patterns": [
+                "{environment}-packages-export-*.csv",
+                "packages-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "Early Adopter.pkg",
+                    "EntSec-Netskope",
+                    "JamfConnectLogin.pkg",
+                    "System Update",
+                    "Security Patch"
+                ],
+                "Smart": [
+                    false,
+                    true,
+                    false,
+                    true,
+                    false
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Package",
+                    "Package",
+                    "Package",
+                    "Package",
+                    "Package"
+                ]
+            }
+        },
+        "groups": {
+            "display_name": "Computer Groups",
+            "icon": "\ud83d\udc65",
+            "description": "Computer groups and smart groups",
+            "jpapi_command": "computer groups",
+            "file_patterns": [
+                "{environment}-groups-export-*.csv",
+                "groups-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "All Managed Computers",
+                    "Active Workstations",
+                    "Development Team",
+                    "Marketing Department",
+                    "Remote Users"
+                ],
+                "Smart": [
+                    true,
+                    true,
+                    false,
+                    true,
+                    false
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Smart Group",
+                    "Smart Group",
+                    "Static Group",
+                    "Smart Group",
+                    "Static Group"
+                ]
+            }
+        },
+        "scripts": {
+            "display_name": "Scripts",
+            "icon": "\ud83d\udcdc",
+            "description": "JAMF Pro scripts and automation",
+            "jpapi_command": "scripts",
+            "file_patterns": [
+                "{environment}-scripts-export-*.csv",
+                "scripts-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "System Information",
+                    "Software Installation",
+                    "User Account Setup",
+                    "Network Configuration",
+                    "Backup Script"
+                ],
+                "Smart": [
+                    false,
+                    true,
+                    false,
+                    true,
+                    false
+                ],
+                "Status": [
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Active",
+                    "Deleted"
+                ],
+                "Modified": [
+                    "2024-01-15",
+                    "2024-01-14",
+                    "2024-01-13",
+                    "2024-01-12",
+                    "2024-01-11"
+                ],
+                "ID": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "Type": [
+                    "Script",
+                    "Script",
+                    "Script",
+                    "Script",
+                    "Script"
+                ]
+            }
+        },
+        "test_objects": {
+            "display_name": "Test Objects",
+            "icon": "\ud83e\uddea",
+            "description": "Test object type for scalability",
+            "jpapi_command": "test-objects",
+            "file_patterns": [
+                "{environment}-test-objects-export-*.csv",
+                "test-objects-export-*.csv"
+            ],
+            "required_columns": [
+                "Name",
+                "ID",
+                "Type",
+                "Status",
+                "Last Modified"
+            ],
+            "sample_data": {
+                "Name": [
+                    "Test Object 1",
+                    "Test Object 2"
+                ],
+                "ID": [
+                    1,
+                    2
+                ],
+                "Type": [
+                    "Test",
+                    "Test"
+                ],
+                "Status": [
+                    "Active",
+                    "Active"
+                ],
+                "Last Modified": [
+                    "2024-01-15",
+                    "2024-01-15"
+                ]
+            }
+        }
+    }
+}

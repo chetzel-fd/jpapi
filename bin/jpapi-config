@@ -1,0 +1,240 @@
+#!/bin/bash
+#
+# JPAPI Configuration Launcher
+# Consolidated SOLID-compliant configuration launcher
+#
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+GUI_DIR="$PROJECT_ROOT/src/apps"
+
+# Configuration Strategy Interface - follows Strategy pattern
+detect_config_strategy() {
+    local preferred_config="${1:-auto}"
+    
+    case "$preferred_config" in
+        "swiftdialog"|"swift")
+            if command -v swiftDialog &> /dev/null; then
+                echo "swiftdialog"
+            else
+                echo "swiftdialog_unavailable"
+            fi
+            ;;
+        "tkinter"|"tk")
+            if python3 -c "import tkinter" 2>/dev/null; then
+                echo "tkinter"
+            else
+                echo "tkinter_unavailable"
+            fi
+            ;;
+        "web"|"browser")
+            echo "web"
+            ;;
+        "auto"|"")
+            # Auto-detect best available config interface
+            if command -v swiftDialog &> /dev/null; then
+                echo "swiftdialog"
+            elif python3 -c "import tkinter" 2>/dev/null; then
+                echo "tkinter"
+            else
+                echo "web"
+            fi
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+# Configuration Strategy Implementations
+launch_swiftdialog_config() {
+    echo -e "${GREEN}🚀 Starting JPAPI Configuration Manager...${NC}"
+    echo -e "${BLUE}📱 swiftDialog Configuration - Native macOS Interface${NC}"
+    echo
+    
+    local config_script="$GUI_DIR/launch_swiftdialog.py"
+    if [[ ! -f "$config_script" ]]; then
+        echo -e "${RED}❌ swiftDialog config script not found: $config_script${NC}"
+        return 1
+    fi
+    
+    cd "$PROJECT_ROOT"
+    python3 "$config_script"
+}
+
+launch_tkinter_config() {
+    echo -e "${GREEN}🚀 Starting JPAPI Configuration Manager...${NC}"
+    echo -e "${BLUE}📱 Tkinter Configuration - Traditional Desktop Interface${NC}"
+    echo
+    
+    local config_script="$GUI_DIR/launch_config_gui.py"
+    if [[ ! -f "$config_script" ]]; then
+        echo -e "${RED}❌ Tkinter config script not found: $config_script${NC}"
+        return 1
+    fi
+    
+    cd "$PROJECT_ROOT"
+    python3 "$config_script"
+}
+
+launch_web_config() {
+    echo -e "${GREEN}🚀 Starting JPAPI Configuration Manager...${NC}"
+    echo -e "${BLUE}🌐 Web Configuration - Browser-based Interface${NC}"
+    echo
+    
+    local config_script="$GUI_DIR/launch_gui.py"
+    if [[ ! -f "$config_script" ]]; then
+        echo -e "${RED}❌ Web config script not found: $config_script${NC}"
+        return 1
+    fi
+    
+    cd "$PROJECT_ROOT"
+    python3 "$config_script"
+}
+
+# Install swiftDialog if needed
+install_swiftdialog() {
+    echo -e "${YELLOW}⚠️  swiftDialog is not installed${NC}"
+    echo -e "${YELLOW}   Installing swiftDialog...${NC}"
+    
+    # Try to install via Homebrew
+    if command -v brew &> /dev/null; then
+        if brew install swiftDialog; then
+            echo -e "${GREEN}✅ swiftDialog installed successfully${NC}"
+            return 0
+        else
+            echo -e "${RED}❌ Failed to install swiftDialog via Homebrew${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Homebrew not found${NC}"
+    fi
+    
+    echo -e "${YELLOW}   Please install swiftDialog manually:${NC}"
+    echo -e "${YELLOW}   1. Download from: https://github.com/bartreardon/swiftDialog/releases${NC}"
+    echo -e "${YELLOW}   2. Or install via: brew install swiftDialog${NC}"
+    return 1
+}
+
+# Show help
+show_help() {
+    echo -e "${GREEN}📱 JPAPI Configuration Launcher${NC}"
+    echo -e "${BLUE}Consolidated SOLID-compliant configuration launcher${NC}"
+    echo
+    echo "🚀 Usage:"
+    echo "   jpapi-config [--interface <type>] [--help]"
+    echo
+    echo "🎨 Available Interfaces:"
+    echo "   --interface swiftdialog    # Native macOS interface (preferred)"
+    echo "   --interface tkinter        # Traditional desktop interface"
+    echo "   --interface web            # Browser-based interface"
+    echo "   --interface auto           # Auto-detect best available (default)"
+    echo
+    echo "💡 Examples:"
+    echo "   jpapi-config                        # Auto-detect best interface"
+    echo "   jpapi-config --interface swiftdialog # Force swiftDialog"
+    echo "   jpapi-config --interface tkinter     # Force Tkinter"
+    echo "   jpapi-config --interface web         # Force web interface"
+    echo
+    echo "🔧 Configuration Features:"
+    echo "   • Server port configuration"
+    echo "   • Environment settings (dev, staging, prod, test)"
+    echo "   • Directory path configuration"
+    echo "   • Timeout value management"
+    echo "   • Output format options"
+    echo "   • User management and role assignment"
+    echo "   • Logging configuration"
+    echo "   • Export/import configuration"
+}
+
+# Main function
+main() {
+    local config_type="auto"
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --interface)
+                config_type="$2"
+                shift 2
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}❌ Unknown option: $1${NC}"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    # Check if Python is available
+    if ! command -v python3 &> /dev/null; then
+        echo -e "${RED}❌ Python 3 is not installed or not in PATH${NC}"
+        exit 1
+    fi
+    
+    # Detect configuration strategy
+    local strategy
+    strategy=$(detect_config_strategy "$config_type")
+    
+    case "$strategy" in
+        "swiftdialog")
+            launch_swiftdialog_config
+            ;;
+        "swiftdialog_unavailable")
+            echo -e "${YELLOW}⚠️  swiftDialog not available, trying to install...${NC}"
+            if install_swiftdialog; then
+                launch_swiftdialog_config
+            else
+                echo -e "${YELLOW}   Falling back to alternative interface...${NC}"
+                strategy=$(detect_config_strategy "auto")
+                case "$strategy" in
+                    "tkinter")
+                        launch_tkinter_config
+                        ;;
+                    "web")
+                        launch_web_config
+                        ;;
+                    *)
+                        echo -e "${RED}❌ No configuration interfaces available${NC}"
+                        exit 1
+                        ;;
+                esac
+            fi
+            ;;
+        "tkinter")
+            launch_tkinter_config
+            ;;
+        "tkinter_unavailable")
+            echo -e "${YELLOW}⚠️  Tkinter not available, falling back to web interface${NC}"
+            launch_web_config
+            ;;
+        "web")
+            launch_web_config
+            ;;
+        "unknown")
+            echo -e "${RED}❌ Unknown interface type: $config_type${NC}"
+            show_help
+            exit 1
+            ;;
+        *)
+            echo -e "${RED}❌ Configuration interface detection failed${NC}"
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function
+main "$@"
