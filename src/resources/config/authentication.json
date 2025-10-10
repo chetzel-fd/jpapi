@@ -1,0 +1,10 @@
+{
+  "jamf_url": "https://fanduelgrouptest.jamfcloud.com",
+  "auth_method": "oauth",
+  "oauth_redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+  "prefer_oauth": true,
+  "fallback_to_basic": true,
+  "auto_refresh_tokens": true,
+  "token_cache_duration": 3600,
+  "credentials_storage": "keychain"
+}
