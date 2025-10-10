@@ -14,7 +14,7 @@ Choose your preferred method:
 #### **Option 1: One-Line Install (Recommended)**
 ```bash
 # Install JPAPI in one command
-curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install_fixed.sh | bash
 ```
 
 #### **Option 2: Homebrew (macOS)**
