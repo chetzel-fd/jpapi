@@ -1,0 +1,278 @@
+# =============================================================================
+# JPAPI - JAMF Pro API Toolkit - Git Ignore Configuration
+# =============================================================================
+# This file prevents sensitive data from being committed to version control
+# =============================================================================
+
+# =============================================================================
+# SENSITIVE DATA - NEVER COMMIT THESE
+# =============================================================================
+
+# Exported data from JAMF (contains company-specific information)
+exports/
+policies_files/
+tmp/
+temp/
+cache/
+.cache/
+logs/
+
+# Storage directories with company data
+storage/
+storage/data/
+storage/exports/
+storage/cache/
+
+# Company-specific exported data and reports
+*_export_*.csv
+*_export_*.json
+*_scan_report_*.json
+
+# Mobile configuration files (company-specific)
+*.mobileconfig
+
+# Manifest and export files
+*_manifest*.json
+*_manifest*.csv
+
+# Credentials and authentication
+*.key
+*.pem
+*.p12
+*.pfx
+*credentials*
+*secret*
+*auth*
+*jwt*
+*token*
+*.env
+.env.*
+
+# Configuration files with sensitive data
+jpapidev.config
+jpapi.config
+*_config.json
+*_prod.*
+*_production.*
+
+# Specific sensitive config files
+resources/config/authentication.json
+resources/config/users.json
+
+# Company-specific configurations
+*_fanduel*
+*fanduel*
+*FanDuel*
+*internal*
+*test*
+*TEST*
+
+# =============================================================================
+# DEVELOPMENT AND BUILD ARTIFACTS
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Note: lib/ is NOT ignored - it's part of our source code
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Development and cache directories
+.mypy_cache/
+.streamlit/
+.cache/
+
+# =============================================================================
+# OPERATING SYSTEM
+# =============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# SECURITY AND COMPLIANCE
+# =============================================================================
+
+# Never commit these file types
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp.bak
+*_backup_*/
+*_solid_backup_*/
+*.tar.gz.bak
+
+# =============================================================================
+# PROJECT SPECIFIC
+# =============================================================================
+
+# Learning and experimental code
+learning_balance/
+experimental/
+sandbox/
+
+# Build and distribution
+build/
+dist/
+*.whl
+*.tar.gz
+
+# Analytics and monitoring
+analytics/
+monitoring/
+performance/
+
+# =============================================================================
+# PRIVATE/PERSONAL FILES - NEVER COMMIT
+# =============================================================================
+
+# Private directory for personal/company files
+private/
+workspace/
+personal/
+company/
+development/
+local/
+
+# Personal and company-specific files
+*_personal*
+*_private*
+*_internal*
+*_company*
+*_workspace*
+*_development*
+*_local*
+
+# Company-specific references (but allow legitimate team setup files)
+*fanduel*
+*FanDuel*
+*FDG*
+*internal*
+*production*
+*PRODUCTION*
+
+# Personal information
+*chetzel*
+*charles.hetzel*
+
+# Real company URLs (not placeholder ones)
+*real-company*.jamfcloud.com
+*production*.jamfcloud.com
+*fanduelgroup*.jamfcloud.com
+
+
+# Company-specific policy and configuration files
+*_FDG_*
+*_fanduel_*
+*_company_*
+
+# Development context files
+*_context*
+*_summary*
+*_improvements*
+*_strategy*
+
+# =============================================================================
+# CRITICAL ADDITIONS FOR LEAKPROOF GITHUB RELEASE
+# =============================================================================
+
+# Root-level company-specific scripts (CRITICAL - these contain company data)
+139_beyondtrust-uninstall.sh
+8_32_Bit_App_Check.sh
+AIM_Extension_Deployment_Guide.md
+aim-chrome-config.plist
+aim-chrome-extension-settings.plist
+aim-chrome-extension.mobileconfig
+aim-chrome-profile.json
+
+# Data exports (CRITICAL - contains 234 company-specific files)
+data/csv-exports/
+data/exports/
+data/scripts/
+data/macos-profiles/
+
+# Development files with potential sensitive info
+enhanced_counts_panel.py
+object_counts_enhancement_suggestions.md
+
+# Additional sensitive patterns
+*_export_*.csv
+*_export_*.json
+*_scan_report_*.json
+*_manifest*.json
+*_manifest*.csv
+
+# =============================================================================
+# END OF GITIGNORE
+# =============================================================================
