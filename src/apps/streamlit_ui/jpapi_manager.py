@@ -129,6 +129,70 @@ st.markdown(
         font-size: 12px;
         margin-bottom: 12px;
     }
+    
+    /* Floating metrics bar */
+    .floating-metrics {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #00143b;
+        border: 1px solid #334977;
+        border-radius: 8px;
+        padding: 8px 16px;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-item {
+        display: inline-block;
+        margin: 0 8px;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 16px;
+        font-weight: 700;
+        display: block;
+    }
+    
+    .metric-label {
+        font-size: 10px;
+        color: #b9c4cb;
+        text-transform: uppercase;
+    }
+    
+    /* Floating action buttons container */
+    .floating-actions {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .floating-btn {
+        background: #3393ff;
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(51, 147, 255, 0.3);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .floating-btn:hover {
+        background: #1a86ff;
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(51, 147, 255, 0.4);
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -357,6 +421,17 @@ def main():
             <span class="metric-value" style="color: #ef4444;">{deleted_count}</span>
             <span class="metric-label">Deleted</span>
         </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    # Floating action buttons
+    st.markdown(
+        """
+    <div class="floating-actions">
+        <button class="floating-btn" onclick="document.querySelector('[data-testid=\\"baseButton-secondary\\"]').click()" title="Settings">⚙️</button>
+        <button class="floating-btn" onclick="document.querySelector('[data-testid=\\"baseButton-secondary\\"]').click()" title="Gather Data">📥</button>
     </div>
     """,
         unsafe_allow_html=True,
