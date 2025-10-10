@@ -3,7 +3,7 @@
 # JPAPI Easy Installer Script
 # =============================================================================
 # One-command installation for JPAPI from GitHub
-# Usage: curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 # =============================================================================
 
 set -euo pipefail
@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-REPO_URL="https://github.com/fanduel/jpapi.git"
+REPO_URL="https://github.com/chetzel-fd/jpapi.git"
 INSTALL_DIR="$HOME/.jpapi"
 VENV_DIR="$INSTALL_DIR/venv"
 
