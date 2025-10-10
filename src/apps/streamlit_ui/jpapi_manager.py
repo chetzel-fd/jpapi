@@ -193,6 +193,94 @@ st.markdown(
         transform: scale(1.1);
         box-shadow: 0 6px 16px rgba(51, 147, 255, 0.4);
     }
+    
+    /* Floating submenu */
+    .floating-submenu {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        background: #00143b;
+        border: 1px solid #334977;
+        border-radius: 12px;
+        padding: 20px;
+        z-index: 1001;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        min-width: 280px;
+        max-width: 320px;
+    }
+    
+    .submenu-content h3 {
+        color: #ffffff;
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .submenu-section {
+        margin-bottom: 16px;
+    }
+    
+    .submenu-section label {
+        display: block;
+        color: #b9c4cb;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .submenu-section select {
+        width: 100%;
+        background: #252729;
+        border: 1px solid #334977;
+        border-radius: 6px;
+        color: #ffffff;
+        padding: 8px 12px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    
+    .submenu-section select:focus {
+        border-color: #3393ff;
+        box-shadow: 0 0 0 2px rgba(51, 147, 255, 0.2);
+    }
+    
+    .submenu-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #334977;
+    }
+    
+    .submenu-btn {
+        background: #3393ff;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex: 1;
+        min-width: 60px;
+    }
+    
+    .submenu-btn:hover {
+        background: #1a86ff;
+        transform: translateY(-1px);
+    }
+    
+    .submenu-btn.close {
+        background: #6b7280;
+    }
+    
+    .submenu-btn.close:hover {
+        background: #4b5563;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -430,33 +518,35 @@ def main():
     with st.container():
         # Create invisible columns to position buttons
         col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
-        
+
         with col5:
             # Settings button
             if st.button("⚙️", key="floating_settings", help="Settings"):
-                st.session_state.show_settings = not st.session_state.get('show_settings', False)
+                st.session_state.show_settings = not st.session_state.get(
+                    "show_settings", False
+                )
                 st.rerun()
-            
-            # Gather Data button  
+
+            # Gather Data button
             if st.button("📥", key="floating_gather", help="Gather Data"):
                 with st.spinner("Gathering fresh data with jpapi..."):
                     try:
                         import subprocess
                         import os
                         from core.config.object_type_manager import ObjectTypeManager
-                        
+
                         object_manager = ObjectTypeManager()
                         cmd = object_manager.build_jpapi_command(
                             st.session_state.current_object_type,
                             st.session_state.current_environment,
                             "csv",
                         )
-                        
+
                         st.info(f"Running: {' '.join(cmd)}")
                         result = subprocess.run(
                             cmd, capture_output=True, text=True, cwd=os.getcwd()
                         )
-                        
+
                         if result.returncode == 0:
                             st.success("✅ Data gathered successfully!")
                             # Clear cache to force reload
@@ -468,21 +558,27 @@ def main():
                             st.error(f"❌ Error gathering data: {result.stderr}")
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
-            
+
             # Export Selected button
             if st.button("📤", key="floating_export", help="Export Selected"):
                 if st.session_state.selected_objects:
-                    st.success(f"✅ Exporting {len(st.session_state.selected_objects)} selected items...")
+                    st.success(
+                        f"✅ Exporting {len(st.session_state.selected_objects)} selected items..."
+                    )
                     # Add export logic here
                 else:
                     st.warning("⚠️ No items selected for export")
-            
+
             # Delete Selected button
             if st.button("🗑️", key="floating_delete", help="Delete Selected"):
                 if st.session_state.selected_objects:
-                    st.session_state.deleted_objects.update(st.session_state.selected_objects)
+                    st.session_state.deleted_objects.update(
+                        st.session_state.selected_objects
+                    )
                     st.session_state.selected_objects.clear()
-                    st.success(f"✅ Moved {len(st.session_state.selected_objects)} items to deleted")
+                    st.success(
+                        f"✅ Moved {len(st.session_state.selected_objects)} items to deleted"
+                    )
                     st.rerun()
                 else:
                     st.warning("⚠️ No items selected for deletion")
@@ -537,59 +633,74 @@ def main():
             unsafe_allow_html=True,
         )
 
-    # Settings panel
-    if st.session_state.get('show_settings', False):
-        with st.expander("⚙️ Settings", expanded=True):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Environment")
-                new_env = st.selectbox(
-                    "Select Environment",
-                    ["sandbox", "production", "staging"],
-                    index=["sandbox", "production", "staging"].index(st.session_state.current_environment)
-                )
-                if new_env != st.session_state.current_environment:
-                    st.session_state.current_environment = new_env
-                    # Clear cache when environment changes
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("data_"):
-                            del st.session_state[key]
-                    st.rerun()
-            
-            with col2:
-                st.subheader("Object Type")
-                new_type = st.selectbox(
-                    "Select Object Type",
-                    ["searches", "policies", "profiles", "packages", "groups"],
-                    index=["searches", "policies", "profiles", "packages", "groups"].index(st.session_state.current_object_type)
-                )
-                if new_type != st.session_state.current_object_type:
-                    st.session_state.current_object_type = new_type
-                    # Clear cache when object type changes
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("data_"):
-                            del st.session_state[key]
-                    st.rerun()
-            
-            st.divider()
-            
-            col3, col4 = st.columns(2)
-            with col3:
-                if st.button("🔄 Refresh Data", key="settings_refresh"):
-                    # Clear all data cache
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("data_"):
-                            del st.session_state[key]
-                    st.success("✅ Data cache cleared")
-                    st.rerun()
-            
-            with col4:
-                if st.button("🗑️ Clear All Selections", key="settings_clear"):
-                    st.session_state.selected_objects.clear()
-                    st.session_state.deleted_objects.clear()
-                    st.success("✅ All selections cleared")
-                    st.rerun()
+    # Floating submenu - compact settings
+    if st.session_state.get("show_settings", False):
+        # Create a compact floating settings panel
+        st.markdown(
+            f"""
+        <div class="floating-submenu">
+            <div class="submenu-content">
+                <h3>⚙️ Settings</h3>
+                <div class="submenu-section">
+                    <label>Environment: {st.session_state.current_environment.upper()}</label>
+                </div>
+                <div class="submenu-section">
+                    <label>Object Type: {st.session_state.current_object_type.title()}</label>
+                </div>
+                <div class="submenu-actions">
+                    <button onclick="window.location.reload()" class="submenu-btn">🔄 Refresh</button>
+                    <button onclick="window.location.reload()" class="submenu-btn">🗑️ Clear</button>
+                    <button onclick="window.location.reload()" class="submenu-btn close">✕ Close</button>
+                </div>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+        
+        # Add quick action buttons below the floating submenu
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("🔄 Refresh", key="quick_refresh", help="Refresh data cache"):
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
+                st.success("✅ Data cache cleared")
+                st.rerun()
+        
+        with col2:
+            if st.button("🗑️ Clear All", key="quick_clear", help="Clear all selections"):
+                st.session_state.selected_objects.clear()
+                st.session_state.deleted_objects.clear()
+                st.success("✅ All selections cleared")
+                st.rerun()
+        
+        with col3:
+            if st.button("⚙️ Environment", key="quick_env", help="Change environment"):
+                # Cycle through environments
+                envs = ["sandbox", "production", "staging"]
+                current_idx = envs.index(st.session_state.current_environment)
+                next_idx = (current_idx + 1) % len(envs)
+                st.session_state.current_environment = envs[next_idx]
+                # Clear cache
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
+                st.rerun()
+        
+        with col4:
+            if st.button("📋 Object Type", key="quick_type", help="Change object type"):
+                # Cycle through object types
+                types = ["searches", "policies", "profiles", "packages", "groups"]
+                current_idx = types.index(st.session_state.current_object_type)
+                next_idx = (current_idx + 1) % len(types)
+                st.session_state.current_object_type = types[next_idx]
+                # Clear cache
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
+                st.rerun()
 
     # Show data source info
     if len(data) > 0 and data.iloc[0]["Name"].startswith("Sample"):
