@@ -1,0 +1,38 @@
+# =============================================================================
+# JPAPI Docker Compose
+# =============================================================================
+# Usage: docker-compose up jpapi
+# =============================================================================
+
+version: "3.8"
+
+services:
+  jpapi:
+    build: .
+    image: fanduel/jpapi:latest
+    container_name: jpapi
+    volumes:
+      # Mount config directory for persistence
+      - ~/.jpapi:/home/jpapi/.jpapi
+      # Mount current directory for development
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Interactive mode
+    stdin_open: true
+    tty: true
+    # Keep container running
+    command: tail -f /dev/null
+
+  # Optional: Web UI service
+  jpapi-ui:
+    build: .
+    image: fanduel/jpapi:latest
+    container_name: jpapi-ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - ~/.jpapi:/home/jpapi/.jpapi
+    command: jpapi dashboard --host 0.0.0.0 --port 8501
+    depends_on:
+      - jpapi
