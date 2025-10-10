@@ -5,7 +5,7 @@ Implements configuration storage using multiple storage backends
 """
 
 from typing import List, Optional
-from src.interfaces.config_storage import IConfigStorage
+from interfaces.config_storage import IConfigStorage
 
 
 class CompositeConfigStorage(IConfigStorage):

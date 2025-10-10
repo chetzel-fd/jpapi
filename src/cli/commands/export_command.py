@@ -360,13 +360,13 @@ class ExportCommand(BaseCommand, LoggingCommandMixin):
 
             # Generate filename with instance prefix if no output path specified
             if args.output is None:
-                from src.lib.exports.manage_exports import generate_export_filename
+                from lib.exports.manage_exports import generate_export_filename
 
                 filename = generate_export_filename(
                     export_type, args.format, self.environment
                 )
                 # Ensure the export directory exists
-                from src.lib.exports.manage_exports import get_export_directory
+                from lib.exports.manage_exports import get_export_directory
 
                 export_dir = get_export_directory(self.environment)
                 export_dir.mkdir(parents=True, exist_ok=True)
@@ -509,7 +509,7 @@ class ExportCommand(BaseCommand, LoggingCommandMixin):
 
         # Name filtering
         if hasattr(args, "filter") and args.filter:
-            from src.lib.utils import create_filter
+            from lib.utils import create_filter
 
             filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             original_count = len(filtered)

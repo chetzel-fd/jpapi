@@ -6,7 +6,7 @@ Handles exporting advanced mobile device searches
 
 from typing import Dict, List, Any, Optional
 from .export_base import ExportBase
-from src.lib.managers.mobile_search_manager import MobileSearchManager
+from lib.managers.mobile_search_manager import MobileSearchManager
 
 
 class ExportMobileSearches(ExportBase):

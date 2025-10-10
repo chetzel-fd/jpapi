@@ -16,7 +16,7 @@ from .common_imports import (
 import argparse
 import json
 import xml.etree.ElementTree as ET
-from src.lib.utils.manage_signatures import (
+from lib.utils.manage_signatures import (
     add_signature_to_name,
     get_user_signature,
     set_user_signature,

@@ -6,7 +6,7 @@ Provides consistent filtering across all commands using wildcards and regex
 
 from typing import List, Dict, Any, Union, Optional
 
-from src.interfaces.pattern_compiler import IPatternCompiler
+from interfaces.pattern_compiler import IPatternCompiler
 from enum import Enum
 
 

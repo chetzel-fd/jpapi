@@ -97,7 +97,7 @@ def main():
 
     # Check if export utilities are available
     try:
-        from src.lib.exports.export_utils import get_instance_prefix
+        from lib.exports.export_utils import get_instance_prefix
 
         st.success("✅ Export utilities available")
     except ImportError:

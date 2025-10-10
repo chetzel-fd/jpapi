@@ -18,7 +18,7 @@ from core.auth.login_factory import get_best_auth
 from core.auth.login_types import AuthInterface
 from core.checks.check_manager import SafetyManager
 from core.logging.command_mixin import LoggingCommandMixin
-from src.lib.utils import create_filter, FilterField
+from lib.utils import create_filter, FilterField
 
 
 @dataclass

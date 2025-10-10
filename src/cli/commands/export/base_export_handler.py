@@ -11,7 +11,7 @@ import csv
 import io
 import time
 from pathlib import Path
-from src.lib.filter_utils import create_filter
+from lib.filter_utils import create_filter
 from core.logging.command_mixin import log_operation, LoggingCommandMixin
 
 

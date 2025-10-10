@@ -10,7 +10,7 @@ from .export_base import ExportBase
 from core.logging.command_mixin import log_operation, with_progress
 import fnmatch
 import time
-from src.lib.utils import create_jamf_hyperlink
+from lib.utils import create_jamf_hyperlink
 
 
 class ExportScripts(ExportBase):

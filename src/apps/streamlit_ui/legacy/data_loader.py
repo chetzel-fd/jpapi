@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
-from src.lib.exports.export_utils import (
+from lib.exports.export_utils import (
     get_export_file_pattern,
     get_export_directory,
     get_instance_prefix,

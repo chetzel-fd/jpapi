@@ -337,7 +337,7 @@ class ListCommand(BaseCommand):
 
         # Name filtering
         if hasattr(args, "filter") and args.filter:
-            from src.lib.utils import create_filter
+            from lib.utils import create_filter
 
             filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             original_count = len(filtered)

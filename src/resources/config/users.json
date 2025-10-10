@@ -1,0 +1,13 @@
+{
+    "default_signature": "chetzel",
+    "available_users": [
+        "chetzel",
+        "jdoe",
+        "admin"
+    ],
+    "user_roles": {
+        "chetzel": "admin",
+        "jdoe": "user",
+        "admin": "admin"
+    }
+}

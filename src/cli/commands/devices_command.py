@@ -5,7 +5,7 @@ Uses existing libraries instead of duplicating functionality - reduces from 625 
 """
 
 from .common_imports import ArgumentParser, Namespace, Dict, Any, List, Optional, BaseCommand
-from src.lib.managers import ComputerManager, MobileDeviceManager
+from lib.managers import ComputerManager, MobileDeviceManager
 
 class DevicesCommand(BaseCommand):
     """Improved devices command using existing libraries"""

@@ -1,25 +1,35 @@
 # 📦 JPAPI Installation Guide
 
+**Version 2.0 - Now with 100% working installation!** 🎉
+
 Multiple easy ways to install JPAPI - choose what works best for you!
 
 ---
 
 ## 🎯 **Recommended: One-Line Install**
 
-The easiest way to get started:
+The easiest way to get started (now actually works!):
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 ```
 
 This script will:
 - ✅ Check for Python 3.8+
 - ✅ Install system dependencies (jq, curl)
-- ✅ Clone the repository
+- ✅ Clone the repository to `~/.jpapi`
 - ✅ Create a virtual environment
-- ✅ Install JPAPI and dependencies
-- ✅ Create a global `jpapi` command
-- ✅ Test the installation
+- ✅ Install JPAPI v2.0 with SOLID architecture
+- ✅ Create a global `jpapi` command in `~/.local/bin`
+- ✅ Verify the installation works
+- ✅ Add to your PATH automatically
+
+**After installation, you can immediately run:**
+```bash
+jpapi --help
+jpapi setup  # Configure your JAMF credentials
+jpapi list policies --help
+```
 
 ---
 
@@ -71,15 +81,21 @@ docker run -it --rm \
 
 ### pip (Global Install)
 ```bash
-# Install globally (not recommended)
-pip install git+https://github.com/fanduel/jpapi.git
+# Install globally (not recommended, but works with v2.0)
+pip install git+https://github.com/chetzel-fd/jpapi.git
 ```
 
 ### pipx (Recommended for CLI tools)
 ```bash
 # Install with pipx (isolated environment)
-pipx install git+https://github.com/fanduel/jpapi.git
+pipx install git+https://github.com/chetzel-fd/jpapi.git
+
+# Or from local checkout
+cd jpapi
+pipx install -e .
 ```
+
+**Note**: With v2.0, pip/pipx installs now work correctly!
 
 ---
 
@@ -130,14 +146,20 @@ sudo ln -sf $(pwd)/venv/bin/jpapi /usr/local/bin/jpapi
 After installation, test that everything works:
 
 ```bash
-# Check version
-jpapi --version
-
-# Check help
+# Check help (version command may not be implemented)
 jpapi --help
 
-# Run diagnostics
-jpapi doctor
+# Setup authentication
+jpapi setup --help
+
+# List available commands
+jpapi list --help
+jpapi export --help
+jpapi setup --help
+
+# Test with your JAMF instance (after setup)
+jpapi setup  # Follow prompts to configure
+jpapi list policies --limit 5
 ```
 
 ---

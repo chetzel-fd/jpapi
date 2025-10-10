@@ -9,7 +9,7 @@ from argparse import Namespace
 from .export_base import ExportBase
 from core.logging.command_mixin import log_operation, with_progress
 import json
-from src.lib.utils import create_jamf_hyperlink
+from lib.utils import create_jamf_hyperlink
 
 
 class ExportDevices(ExportBase):

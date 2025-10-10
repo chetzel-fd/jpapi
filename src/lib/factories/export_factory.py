@@ -6,7 +6,7 @@ Creates and manages export manager instances
 
 from typing import Dict, Optional
 from pathlib import Path
-from src.interfaces import IExportManager
+from interfaces import IExportManager
 from ..exports.manage_exports import get_instance_prefix
 
 

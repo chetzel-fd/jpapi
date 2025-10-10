@@ -11,8 +11,8 @@ import csv
 import io
 import time
 from pathlib import Path
-from src.lib.utils import create_filter
-from src.lib.exports.manage_exports import (
+from lib.utils import create_filter
+from lib.exports.manage_exports import (
     generate_export_filename,
     get_export_directory,
 )
@@ -139,7 +139,7 @@ class ExportBase(LoggingCommandMixin):
     ) -> None:
         """Generate analysis report for the export"""
         try:
-            from src.lib.utils.export_analysis import ExportAnalyzer
+            from lib.utils.export_analysis import ExportAnalyzer
 
             analyzer = ExportAnalyzer()
             analysis = analyzer.analyze_export_data(data, self.data_type)

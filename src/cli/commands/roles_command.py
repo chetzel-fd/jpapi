@@ -290,7 +290,7 @@ class RolesCommand(BaseCommand):
             # Apply filter if provided
             roles_to_delete = all_roles
             if args.pattern:
-                from src.lib.utils import create_filter
+                from lib.utils import create_filter
 
                 filter_obj = create_filter(args.filter_type)
                 roles_to_delete = filter_obj.filter_objects(

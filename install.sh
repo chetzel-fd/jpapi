@@ -160,8 +160,26 @@ install_jpapi() {
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
     
-    # Install in editable mode
-    pip install -e .
+    # Install in editable mode with error checking
+    print_info "Running: pip install -e ."
+    if ! pip install -e . 2>&1 | tee /tmp/jpapi-install.log; then
+        print_error "pip install failed. Check /tmp/jpapi-install.log for details"
+        echo ""
+        print_error "Last 20 lines of install log:"
+        tail -20 /tmp/jpapi-install.log
+        exit 1
+    fi
+    
+    # Verify entry point was created
+    if [ ! -f "$VENV_DIR/bin/jpapi" ]; then
+        print_error "jpapi entry point was not created in virtual environment"
+        print_error "This usually indicates a setup.py configuration issue"
+        print_error "Expected: $VENV_DIR/bin/jpapi"
+        exit 1
+    fi
+    
+    # Make executable if needed
+    chmod +x "$VENV_DIR/bin/jpapi"
     
     print_success "JPAPI installed successfully"
 }

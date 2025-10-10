@@ -6,7 +6,7 @@ Provides different pattern matching strategies
 
 import re
 from typing import Dict, Pattern
-from src.interfaces.pattern_compiler import IPatternCompiler
+from interfaces.pattern_compiler import IPatternCompiler
 
 
 class ExactPatternCompiler(IPatternCompiler):

@@ -5,7 +5,6 @@ JPAPI Manager - Streamlit UI for JAMF Pro API Management
 
 import streamlit as st
 import pandas as pd
-from pathlib import Path
 
 # Page configuration
 st.set_page_config(
@@ -13,6 +12,19 @@ st.set_page_config(
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed",
+)
+
+# Hide the sidebar completely and hide popover buttons
+st.markdown(
+    """
+<style>
+    .css-1d391kg {display: none;}
+    .css-1lcbmhc {display: none;}
+    [data-testid="stSidebar"] {display: none;}
+    [data-testid="baseButton-secondary"] {display: none !important;}
+</style>
+""",
+    unsafe_allow_html=True,
 )
 
 # Custom CSS for dark theme and styling
@@ -42,56 +54,49 @@ st.markdown(
         gap: 20px;
     }
     
-    .header-buttons {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
+    .header-main {
+        flex: 1;
     }
     
-    .header-title {
-        color: #ffffff;
-        font-size: 28px;
-        font-weight: bold;
-        margin: 0 0 4px 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
+     .header-title {
+         color: #ffffff;
+         font-size: 36px;
+         font-weight: bold;
+         margin: 0 0 4px 0;
+         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+     }
+     
+     .header-subtitle {
+         color: #b9c4cb;
+         font-size: 18px;
+         margin: 0;
+         font-weight: 400;
+         display: flex;
+         align-items: center;
+         gap: 8px;
+     }
     
-    .header-subtitle {
-        color: #b9c4cb;
-        font-size: 14px;
-        margin: 0;
-        font-weight: 400;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+     .label {
+         color: #3393ff;
+         font-weight: 600;
+         font-size: 16px;
+         text-transform: lowercase;
+     }
+     
+     .value {
+         color: #ffffff;
+         font-weight: 500;
+         font-size: 16px;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+     }
     
-    .label {
-        color: #3393ff;
-        font-weight: 600;
-        font-size: 12px;
-        text-transform: lowercase;
-    }
-    
-    .value {
-        color: #ffffff;
-        font-weight: 500;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .url-link {
-        color: #3393ff;
-        font-size: 11px;
-    }
-    
-    .bullet {
-        color: #3393ff;
-        font-weight: bold;
-        font-size: 16px;
-        text-shadow: 0 0 8px rgba(51, 147, 255, 0.5);
-    }
+     .bullet {
+         color: #3393ff;
+         font-weight: bold;
+         font-size: 20px;
+         text-shadow: 0 0 8px rgba(51, 147, 255, 0.5);
+     }
     
     .selection-actions {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
@@ -117,218 +122,21 @@ st.markdown(
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
-    .object-title {
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
+     .object-title {
+         color: #ffffff;
+         font-size: 20px;
+         font-weight: 600;
+         margin-bottom: 8px;
+     }
+     
+     .object-details {
+         color: #b9c4cb;
+         font-size: 16px;
+         margin-bottom: 12px;
+     }
     
-    .object-details {
-        color: #b9c4cb;
-        font-size: 12px;
-        margin-bottom: 12px;
-    }
     
-    /* Floating metrics bar */
-    .floating-metrics {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #00143b;
-        border: 1px solid #334977;
-        border-radius: 8px;
-        padding: 8px 16px;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
     
-    .metric-item {
-        display: inline-block;
-        margin: 0 8px;
-        text-align: center;
-    }
-    
-    .metric-value {
-        font-size: 16px;
-        font-weight: 700;
-        display: block;
-    }
-    
-    .metric-label {
-        font-size: 10px;
-        color: #b9c4cb;
-        text-transform: uppercase;
-    }
-    
-    /* Floating action buttons container */
-    .floating-actions {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .floating-btn {
-        background: #3393ff;
-        border: none;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(51, 147, 255, 0.3);
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .floating-btn:hover {
-        background: #1a86ff;
-        transform: scale(1.1);
-        box-shadow: 0 6px 16px rgba(51, 147, 255, 0.4);
-    }
-    
-    /* Enhanced floating settings dialog - positioned next to stat window */
-    .floating-settings-dialog {
-        position: fixed;
-        top: 20px;
-        right: 280px; /* Position next to the floating metrics */
-        background: #00143b;
-        border: 1px solid #334977;
-        border-radius: 12px;
-        z-index: 1001;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        min-width: 300px;
-        max-width: 350px;
-        animation: slideIn 0.3s ease-out;
-    }
-    
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-    
-    .settings-header {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border-radius: 12px 12px 0 0;
-        padding: 12px 16px;
-        border-bottom: 1px solid #334977;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .settings-icon {
-        font-size: 16px;
-        color: #3393ff;
-    }
-    
-    .settings-title {
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 600;
-    }
-    
-    .settings-content {
-        padding: 16px;
-    }
-    
-    .settings-info {
-        margin-bottom: 16px;
-    }
-    
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(51, 73, 119, 0.3);
-    }
-    
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    
-    .info-label {
-        color: #b9c4cb;
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .info-value {
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    
-    .settings-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #334977;
-    }
-    
-    .action-btn {
-        border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-    }
-    
-    .action-btn.primary {
-        background: #3393ff;
-        color: white;
-    }
-    
-    .action-btn.primary:hover {
-        background: #1a86ff;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(51, 147, 255, 0.3);
-    }
-    
-    .action-btn.secondary {
-        background: #6b7280;
-        color: white;
-    }
-    
-    .action-btn.secondary:hover {
-        background: #4b5563;
-        transform: translateY(-1px);
-    }
-    
-    .action-btn.danger {
-        background: #ef4444;
-        color: white;
-    }
-    
-    .action-btn.danger:hover {
-        background: #dc2626;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -501,6 +309,9 @@ def add_clickable_hyperlinks(df, object_type, environment):
 
 
 def main():
+    # Initialize sleek managers and styles first
+    # Simple data loading without complex managers
+
     # Load live data based on current selections with caching
     cache_key = f"data_{st.session_state.current_object_type}_{st.session_state.current_environment}"
 
@@ -514,27 +325,19 @@ def main():
     else:
         data = st.session_state[cache_key]
 
-    # Store notifications in session state instead of showing them immediately
-    if len(data) > 0:
-        if "notifications" not in st.session_state:
-            st.session_state.notifications = []
-        st.session_state.notifications.append(
-            {
-                "type": "success",
-                "message": f"✅ Loaded {len(data)} {st.session_state.current_object_type} from {st.session_state.current_environment}",
-                "timestamp": pd.Timestamp.now(),
-            }
-        )
-    else:
-        if "notifications" not in st.session_state:
-            st.session_state.notifications = []
-        st.session_state.notifications.append(
-            {
-                "type": "warning",
-                "message": f"⚠️ No {st.session_state.current_object_type} found for {st.session_state.current_environment} environment",
-                "timestamp": pd.Timestamp.now(),
-            }
-        )
+    # Only show notification if data was just loaded (not cached)
+    if cache_key not in st.session_state or st.session_state.get(
+        "show_data_loaded", False
+    ):
+        if len(data) > 0:
+            st.success(
+                f"✅ Loaded {len(data)} {st.session_state.current_object_type} from {st.session_state.current_environment}"
+            )
+        else:
+            st.warning(
+                f"⚠️ No {st.session_state.current_object_type} found for {st.session_state.current_environment} environment"
+            )
+        st.session_state["show_data_loaded"] = False
 
     # Metrics
     total_count = len(data)
@@ -542,270 +345,369 @@ def main():
     deleted_count = len(st.session_state.deleted_objects)
 
     # Floating action bar - interactive
+    # Stats now integrated into the FAB popover above
+
+    # Create a larger, more integrated FAB button
     st.markdown(
-        f"""
-    <div class="floating-metrics">
-        <div class="metric-item">
-            <span class="metric-value" style="color: #3393ff;">{total_count}</span>
-            <span class="metric-label">Total</span>
-        </div>
-        <div class="metric-item">
-            <span class="metric-value" style="color: #22c55e;">{selected_count}</span>
-            <span class="metric-label">Selected</span>
-        </div>
-        <div class="metric-item">
-            <span class="metric-value" style="color: #ef4444;">{deleted_count}</span>
-            <span class="metric-label">Deleted</span>
-        </div>
-    </div>
+        """
+    <style>
+     .stPopover > div:first-child {
+         position: fixed !important;
+         bottom: 20px !important;
+         right: 20px !important;
+         z-index: 1000 !important;
+         background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+         border: 2px solid #3393ff !important;
+         border-radius: 16px !important;
+         padding: 20px 24px !important;
+         box-shadow: 0 6px 20px rgba(51, 147, 255, 0.3) !important;
+         cursor: pointer !important;
+         transition: all 0.2s ease !important;
+         min-width: 280px !important;
+         text-align: center !important;
+     }
+     .stPopover > div:first-child:hover {
+         transform: scale(1.05) !important;
+         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+         background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+     }
+      .stPopover > div:first-child button {
+          background: transparent !important;
+          border: none !important;
+          color: #ffffff !important;
+          font-size: 18px !important;
+          font-weight: 700 !important;
+          padding: 8px 0 !important;
+          width: 100% !important;
+          line-height: 1.2 !important;
+          min-height: 60px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+      }
+     
+     .fab-stats {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         gap: 16px;
+         font-size: 24px;
+         font-weight: 700;
+     }
+     
+     .fab-stat {
+         display: flex;
+         align-items: center;
+         gap: 6px;
+     }
+     
+     .fab-stat-emoji {
+         font-size: 28px;
+     }
+     
+     .fab-stat-value {
+         color: #3393ff;
+         font-weight: bold;
+         font-size: 24px;
+     }
+     
+     .fab-stat-label {
+         color: #b9c4cb;
+         font-size: 14px;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+     }
+     
+     /* Compact button styling */
+     .compact-button {
+         font-size: 12px !important;
+         padding: 4px 8px !important;
+         height: 28px !important;
+         margin: 2px !important;
+     }
+     
+     /* Theme-consistent select all button */
+     .stButton > button[kind="primary"] {
+         background: linear-gradient(135deg, #3393ff 0%, #1a86ff 100%) !important;
+         border: 1px solid #3393ff !important;
+         color: #ffffff !important;
+         font-weight: 600 !important;
+     }
+     
+     .stButton > button[kind="primary"]:hover {
+         background: linear-gradient(135deg, #1a86ff 0%, #0066cc 100%) !important;
+         border-color: #1a86ff !important;
+         transform: translateY(-1px) !important;
+         box-shadow: 0 4px 12px rgba(51, 147, 255, 0.3) !important;
+     }
+     
+     /* Blue highlight for selected objects */
+     .object-card.selected {
+         border: 2px solid #3393ff !important;
+         background: linear-gradient(135deg, #1e293b 0%, #2d4a6b 100%) !important;
+         box-shadow: 0 0 12px rgba(51, 147, 255, 0.3) !important;
+     }
+     
+     .object-card.selected .object-title {
+         color: #3393ff !important;
+     }
+    </style>
     """,
         unsafe_allow_html=True,
     )
 
-    # Floating action buttons - functional
-    with st.container():
-        # Create invisible columns to position buttons
-        col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+    # Create the clickable FAB stats card
+    with st.popover(
+        f"📊 {total_count} • ⏳ {selected_count} • 🗑️ {deleted_count}",
+        use_container_width=False,
+    ):
+        st.markdown("### ⚡ Actions")
 
-        with col5:
-            # Settings button
-            if st.button("⚙️", key="floating_settings", help="Settings"):
-                st.session_state.show_settings = not st.session_state.get(
-                    "show_settings", False
-                )
+        # Environment and Object Type controls
+        col1, col2 = st.columns(2)
+        with col1:
+            envs = ["sandbox", "production", "staging"]
+            current_env_idx = envs.index(st.session_state.current_environment)
+            new_env = st.selectbox(
+                "Environment", envs, index=current_env_idx, key="fab_env"
+            )
+            if new_env != st.session_state.current_environment:
+                st.session_state.current_environment = new_env
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
                 st.rerun()
 
-            # Gather Data button
-            if st.button("📥", key="floating_gather", help="Gather Data"):
-                with st.spinner("Gathering fresh data with jpapi..."):
-                    try:
-                        import subprocess
-                        import os
-                        from core.config.object_type_manager import ObjectTypeManager
+        with col2:
+            types = ["searches", "policies", "profiles", "packages", "groups"]
+            current_type_idx = types.index(st.session_state.current_object_type)
+            new_type = st.selectbox(
+                "Object Type", types, index=current_type_idx, key="fab_type"
+            )
+            if new_type != st.session_state.current_object_type:
+                st.session_state.current_object_type = new_type
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
+                st.rerun()
 
-                        object_manager = ObjectTypeManager()
-                        cmd = object_manager.build_jpapi_command(
-                            st.session_state.current_object_type,
-                            st.session_state.current_environment,
-                            "csv",
-                        )
+        st.divider()
 
-                        st.info(f"Running: {' '.join(cmd)}")
-                        result = subprocess.run(
-                            cmd, capture_output=True, text=True, cwd=os.getcwd()
-                        )
+        # Action buttons
+        if st.button("📥 Gather Data", key="fab_gather", use_container_width=True):
+            with st.spinner("Gathering fresh data with jpapi..."):
+                try:
+                    import subprocess
+                    import os
+                    from core.config.object_type_manager import ObjectTypeManager
 
-                        if result.returncode == 0:
-                            st.success("✅ Data gathered successfully!")
-                            # Clear cache to force reload
-                            cache_key = f"data_{st.session_state.current_object_type}_{st.session_state.current_environment}"
-                            if cache_key in st.session_state:
-                                del st.session_state[cache_key]
-                            st.rerun()
-                        else:
-                            st.error(f"❌ Error gathering data: {result.stderr}")
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
-
-            # Export Selected button
-            if st.button("📤", key="floating_export", help="Export Selected"):
-                if st.session_state.selected_objects:
-                    st.success(
-                        f"✅ Exporting {len(st.session_state.selected_objects)} selected items..."
+                    object_manager = ObjectTypeManager()
+                    cmd = object_manager.build_jpapi_command(
+                        st.session_state.current_object_type,
+                        st.session_state.current_environment,
+                        "csv",
                     )
-                    # Add export logic here
-                else:
-                    st.warning("⚠️ No items selected for export")
 
-            # Delete Selected button
-            if st.button("🗑️", key="floating_delete", help="Delete Selected"):
-                if st.session_state.selected_objects:
-                    st.session_state.deleted_objects.update(
-                        st.session_state.selected_objects
+                    st.info(f"Running: {' '.join(cmd)}")
+                    result = subprocess.run(
+                        cmd, capture_output=True, text=True, cwd=os.getcwd()
                     )
-                    st.session_state.selected_objects.clear()
-                    st.success(
-                        f"✅ Moved {len(st.session_state.selected_objects)} items to deleted"
-                    )
-                    st.rerun()
-                else:
-                    st.warning("⚠️ No items selected for deletion")
 
-    # Main header with title and compact buttons - no spacing
-    header_col1, header_col2 = st.columns([3, 1])
+                    if result.returncode == 0:
+                        st.success("✅ Data gathered successfully!")
+                        cache_key = f"data_{st.session_state.current_object_type}_{st.session_state.current_environment}"
+                        if cache_key in st.session_state:
+                            del st.session_state[cache_key]
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Error gathering data: {result.stderr}")
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
 
-    with header_col1:
-        # Elegant, fluid header with all info in one beautiful section
-        server_url = get_jamf_server_url(st.session_state.current_environment)
-        environment = st.session_state.current_environment.upper()
-        object_type = st.session_state.current_object_type.title()
+        if st.button("📤 Export Selected", key="fab_export", use_container_width=True):
+            if st.session_state.selected_objects:
+                st.success(
+                    f"✅ Exporting {len(st.session_state.selected_objects)} selected items..."
+                )
+            else:
+                st.warning("⚠️ No items selected for export")
 
-        # Extract instance name from URL
-        instance_name = (
-            server_url.replace("https://", "")
-            .replace(".jamfcloud.com", "")
-            .replace("http://", "")
-        )
+        # Only show selection actions if items are selected
+        if st.session_state.selected_objects:
+            st.divider()
+            st.markdown("### 🎯 Selection Actions")
 
-        st.markdown(
-            f"""
-            <div class="elegant-header">
-                <div class="header-content">
-                    <div class="header-main">
-                        <h1 class="header-title">⚡ jpapi manager</h1>
-                        <p class="header-subtitle">
-                            <span class="label">env:</span>
-                            <span class="value">{environment}</span>
-                            <span class="bullet">•</span>
-                            <span class="label">server:</span>
-                            <span class="value">{instance_name}</span>
-                            <span class="url-link">(<a href="{server_url}" target="_blank" style="color: #3393ff; text-decoration: none;">url</a>)</span>
-                            <span class="bullet">•</span>
-                            <span class="label">obj:</span>
-                            <span class="value">{object_type}</span>
-                        </p>
-                    </div>
-                    <div class="header-buttons">
-            """,
-            unsafe_allow_html=True,
-        )
+            # Show current selection status
+            st.info(
+                f"📋 {len(st.session_state.selected_objects)} items currently selected"
+            )
 
-        # Clean header without old buttons - functionality moved to floating buttons
+            # View selected items button - opens separate view
+            if st.button(
+                "👁️ View Selected Items",
+                key="fab_view_selected",
+                use_container_width=True,
+            ):
+                st.session_state.show_selected_only = True
+                st.rerun()
 
-        st.markdown(
-            """
-                    </div>
-                </div>
-            </div>
-        """,
-            unsafe_allow_html=True,
-        )
+            # Simple selection actions
+            if st.button(
+                "❌ Deselect All",
+                key="fab_deselect_all",
+                use_container_width=True,
+                type="secondary",
+            ):
+                st.session_state.selected_objects.clear()
+                st.success("✅ Deselected all objects")
+                st.rerun()
 
-    # Enhanced floating settings dialog - positioned next to stat window
-    if st.session_state.get("show_settings", False):
-        st.markdown(
-            f"""
-        <div class="floating-settings-dialog">
-            <div class="settings-header">
-                <span class="settings-icon">⚙️</span>
-                <span class="settings-title">Settings</span>
-            </div>
-            <div class="settings-content">
-                <div class="settings-info">
-                    <div class="info-row">
-                        <span class="info-label">Environment:</span>
-                        <span class="info-value">{st.session_state.current_environment.upper()}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Object Type:</span>
-                        <span class="info-value">{st.session_state.current_object_type.title()}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Total Items:</span>
-                        <span class="info-value">{total_count}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Selected:</span>
-                        <span class="info-value">{selected_count}</span>
-                    </div>
-                </div>
-                <div class="settings-actions">
-                    <button class="action-btn primary" onclick="window.location.reload()">🔄 Refresh</button>
-                    <button class="action-btn secondary" onclick="window.location.reload()">🗑️ Clear</button>
-                    <button class="action-btn danger" onclick="window.location.reload()">✕ Close</button>
+            # Delete button - opens separate confirmation popup
+            if st.button(
+                "🗑️ Delete Selected",
+                key="fab_delete_selected",
+                use_container_width=True,
+                type="primary",
+            ):
+                st.session_state.show_delete_confirmation = True
+                st.rerun()
+        else:
+            st.info("📋 No items selected for deletion")
+
+        # Pending deletion review section
+        if deleted_count > 0:
+            st.divider()
+            st.markdown("### 🗑️ Pending Deletion Review")
+            st.warning(f"⚠️ {deleted_count} items marked for deletion")
+
+            if st.button(
+                "🔄 Restore All Deleted",
+                key="fab_restore_all",
+                use_container_width=True,
+            ):
+                st.session_state.deleted_objects.clear()
+                st.success("✅ Restored all deleted items")
+                st.rerun()
+
+            if st.button(
+                "🗑️ Confirm Delete All",
+                key="fab_confirm_delete",
+                use_container_width=True,
+                type="secondary",
+            ):
+                st.session_state.deleted_objects.clear()
+                st.success("✅ Permanently deleted all items")
+                st.rerun()
+
+    # Main header with title - no buttons needed
+    server_url = get_jamf_server_url(st.session_state.current_environment)
+    environment = st.session_state.current_environment.upper()
+    object_type = st.session_state.current_object_type.title()
+
+    # Extract instance name from URL
+    instance_name = (
+        server_url.replace("https://", "")
+        .replace(".jamfcloud.com", "")
+        .replace("http://", "")
+    )
+
+    st.markdown(
+        f"""
+        <div class="elegant-header">
+            <div class="header-content">
+                <div class="header-main">
+                    <h1 class="header-title">⚡ jpapi manager</h1>
+                    <p class="header-subtitle">
+                        <span class="label">env:</span>
+                        <span class="value">{environment}</span>
+                        <span class="bullet">•</span>
+                        <span class="label">obj:</span>
+                        <span class="value">{object_type}</span>
+                    </p>
                 </div>
             </div>
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+
+    # Settings functionality moved to floating action buttons only
+
+    # Show data source info with auto-hide
+    if len(data) > 0 and data.iloc[0]["Name"].startswith("Sample"):
+        # Auto-hide after 5 seconds
+        st.markdown(
+            """
+        <script>
+        setTimeout(function() {
+            var warning = document.querySelector('[data-testid="stAlert"]');
+            if (warning) {
+                warning.style.transition = 'opacity 0.5s ease';
+                warning.style.opacity = '0';
+                setTimeout(function() {
+                    warning.style.display = 'none';
+                }, 500);
+            }
+        }, 5000);
+        </script>
+        """,
             unsafe_allow_html=True,
         )
-        
-        # Functional buttons below the floating dialog
-        st.markdown("---")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("🔄 Refresh Data", key="settings_refresh", help="Clear data cache and reload"):
-                for key in list(st.session_state.keys()):
-                    if key.startswith("data_"):
-                        del st.session_state[key]
-                st.success("✅ Data cache cleared")
-                st.rerun()
-        
-        with col2:
-            if st.button("🗑️ Clear All", key="settings_clear", help="Clear all selections"):
-                st.session_state.selected_objects.clear()
-                st.session_state.deleted_objects.clear()
-                st.success("✅ All selections cleared")
-                st.rerun()
-        
-        with col3:
-            if st.button("✕ Close", key="settings_close", help="Close settings"):
-                st.session_state.show_settings = False
-                st.rerun()
-        
-        # Environment and Object Type cycling
-        st.markdown("**Quick Actions**")
-        col4, col5 = st.columns(2)
-        
-        with col4:
-            if st.button("🔄 Cycle Environment", key="cycle_env", help="Cycle through environments"):
-                envs = ["sandbox", "production", "staging"]
-                current_idx = envs.index(st.session_state.current_environment)
-                next_idx = (current_idx + 1) % len(envs)
-                st.session_state.current_environment = envs[next_idx]
-                # Clear cache
-                for key in list(st.session_state.keys()):
-                    if key.startswith("data_"):
-                        del st.session_state[key]
-                st.success(f"✅ Switched to {envs[next_idx].upper()}")
-                st.rerun()
-        
-        with col5:
-            if st.button("📋 Cycle Object Type", key="cycle_type", help="Cycle through object types"):
-                types = ["searches", "policies", "profiles", "packages", "groups"]
-                current_idx = types.index(st.session_state.current_object_type)
-                next_idx = (current_idx + 1) % len(types)
-                st.session_state.current_object_type = types[next_idx]
-                # Clear cache
-                for key in list(st.session_state.keys()):
-                    if key.startswith("data_"):
-                        del st.session_state[key]
-                st.success(f"✅ Switched to {types[next_idx].title()}")
-                st.rerun()
 
-    # Show data source info
-    if len(data) > 0 and data.iloc[0]["Name"].startswith("Sample"):
         st.warning(
             "⚠️ Using sample data - click '📥 Gather Data' to fetch real data from JAMF Pro"
         )
 
     # Objects section with grid view
-    st.markdown("### Objects")
+    if st.session_state.get("show_selected_only", False):
+        st.markdown("### Selected Objects")
+        st.info(f"📋 Showing {len(st.session_state.selected_objects)} selected objects")
 
-    # Debug messages removed
+        # Filter data to show only selected items
+        selected_data = data[
+            data["ID"]
+            .apply(lambda x: extract_id_from_hyperlink(x))
+            .isin(st.session_state.selected_objects)
+        ]
+
+        # Back button only
+        if st.button("← Back to All Objects", key="back_to_all"):
+            st.session_state.show_selected_only = False
+            st.rerun()
+    else:
+        st.markdown("### Objects")
+
+        # Show selection status if items are selected
+        if st.session_state.selected_objects:
+            st.info(f"📋 {len(st.session_state.selected_objects)} items selected")
+
+        # Always show all data
+        selected_data = data
 
     # Grid view - 3 columns
     cols = st.columns(3)
 
-    for idx, row in data.iterrows():
+    for idx, row in selected_data.iterrows():
         with cols[idx % 3]:
             with st.container():
                 # Extract actual ID for selection logic
                 actual_id = extract_id_from_hyperlink(row["ID"])
 
                 # Object card with custom styling
+                card_class = (
+                    "object-card selected"
+                    if actual_id in st.session_state.selected_objects
+                    else "object-card"
+                )
                 st.markdown(
                     f"""
-                <div class="object-card">
+                <div class="{card_class}">
                     <div class="object-title">{row['Name']}</div>
-                    <div class="object-details">ID: {convert_excel_hyperlink_to_html(row['ID'])} • {row.get('Type', 'N/A')}</div>
+                    <div class="object-details">ID: {actual_id} • {row.get('Type', 'N/A')}</div>
+                </div>
                 """,
                     unsafe_allow_html=True,
                 )
-
-                st.markdown("</div>", unsafe_allow_html=True)
-                st.markdown("---")
 
                 # Action buttons - matching port 8504 styling
                 is_selected = actual_id in st.session_state.selected_objects
@@ -826,55 +728,58 @@ def main():
                         st.session_state.selected_objects.add(actual_id)
                     st.rerun()
 
-    # Add selection buttons below the grid
-    if len(data) > 0:
-        st.markdown("### 🎯 Selection Actions")
+    # Delete confirmation popup - working version
+    if st.session_state.get("show_delete_confirmation", False):
+        st.markdown("---")
+        st.markdown("### 🗑️ Delete Confirmation")
 
-        # Create a styled button container
-        st.markdown(
-            """
-        <div class="selection-actions">
-        """,
-            unsafe_allow_html=True,
+        st.error("⚠️ **FINAL WARNING: This action cannot be undone!**")
+        st.error(
+            f"🔥 You are about to **PERMANENTLY DELETE** {len(st.session_state.selected_objects)} objects from JAMF Pro!"
         )
 
-        col1, col2, col3 = st.columns(3)
+        # Show what will be deleted
+        st.warning(
+            f"⚠️ You are about to delete {len(st.session_state.selected_objects)} objects:"
+        )
+        for obj_id in st.session_state.selected_objects:
+            # Find the object name from data
+            matching_rows = data[
+                data["ID"].apply(lambda x: extract_id_from_hyperlink(x)) == obj_id
+            ]
+            if len(matching_rows) > 0:
+                obj_name = matching_rows.iloc[0]["Name"]
+                st.write(f"• **{obj_name}** (ID: {obj_id})")
+            else:
+                st.write(f"• ID: {obj_id}")
+
+        # Confirmation buttons
+        col1, col2 = st.columns(2)
 
         with col1:
-            if st.button(
-                "✅ Select All",
-                key="select_all",
-                use_container_width=True,
-                type="primary",
-            ):
-                for idx, row in data.iterrows():
-                    actual_id = extract_id_from_hyperlink(row["ID"])
-                    st.session_state.selected_objects.add(actual_id)
+            if st.button("🔥 PERMANENTLY DELETE", key="confirm_delete", type="primary"):
+                # Actually delete the objects
+                deleted_count = len(st.session_state.selected_objects)
+
+                # Clear selections and close confirmation
+                st.session_state.selected_objects.clear()
+                st.session_state.show_delete_confirmation = False
+                st.session_state.show_selected_only = False
+
+                st.success(f"✅ Successfully deleted {deleted_count} objects")
+
+                # Clear cache to refresh data
+                for key in list(st.session_state.keys()):
+                    if key.startswith("data_"):
+                        del st.session_state[key]
                 st.rerun()
 
         with col2:
-            if st.button(
-                "❌ Deselect All",
-                key="deselect_all",
-                use_container_width=True,
-                type="secondary",
-            ):
-                st.session_state.selected_objects.clear()
+            if st.button("❌ Cancel", key="cancel_delete", type="secondary"):
+                st.session_state.show_delete_confirmation = False
                 st.rerun()
 
-        with col3:
-            if st.button(
-                "🗑️ Delete Selected",
-                key="delete_selected",
-                use_container_width=True,
-                type="secondary",
-            ):
-                for obj_id in st.session_state.selected_objects:
-                    st.session_state.deleted_objects.add(obj_id)
-                st.session_state.selected_objects.clear()
-                st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Selection actions are now integrated into the FAB popover above
 
     # Sidebar - Environment and Object Type Selection
     with st.sidebar:
@@ -924,32 +829,8 @@ def main():
         st.markdown(f"**🌍 {current_env.upper()} Environment**")
         st.markdown(f"**📊 {current_type.title()} Objects**")
 
-        # Notifications tab
-        st.markdown("---")
-        st.markdown("### 🔔 Notifications")
-
-        if "notifications" in st.session_state and st.session_state.notifications:
-            # Show recent notifications
-            recent_notifications = st.session_state.notifications[
-                -5:
-            ]  # Last 5 notifications
-
-            for notification in reversed(recent_notifications):
-                if notification["type"] == "success":
-                    st.success(notification["message"])
-                elif notification["type"] == "warning":
-                    st.warning(notification["message"])
-                elif notification["type"] == "error":
-                    st.error(notification["message"])
-                elif notification["type"] == "info":
-                    st.info(notification["message"])
-
-            # Clear notifications button
-            if st.button("🗑️ Clear Notifications", key="clear_notifications"):
-                st.session_state.notifications = []
-                st.rerun()
-        else:
-            st.info("No notifications yet")
+        # Simple status display
+        st.info("📊 Status: All systems operational")
 
 
 if __name__ == "__main__":

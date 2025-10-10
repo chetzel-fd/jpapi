@@ -5,7 +5,7 @@ Implements configuration management using multiple managers
 """
 
 from typing import Dict, List, Optional, Type, TypeVar
-from src.interfaces.config_manager import IConfigManager, ConfigValue
+from interfaces.config_manager import IConfigManager, ConfigValue
 
 T = TypeVar("T", bound=ConfigValue)  # Type of configuration value
 

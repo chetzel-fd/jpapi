@@ -1,0 +1,9 @@
+{
+    "api_timeout": 30,
+    "cache_timeout": 300,
+    "operation_timeout": 300,
+    "connection_timeout": 10,
+    "retry_timeout": 5,
+    "bash_operation_timeout": 30,
+    "python_operation_timeout": 300
+}

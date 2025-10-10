@@ -15,7 +15,8 @@ class JPAPIIntegrationService:
 
     def __init__(self, project_root: str):
         self.project_root = project_root
-        self.jpapi_main_path = os.path.join(project_root, "jpapi_main.py")
+        # Use installed jpapi command instead of script
+        self.jpapi_command = "jpapi"
 
     def gather_data(self, object_type: str, environment: str) -> Dict[str, Any]:
         """Gather data using JPAPI CLI"""
@@ -23,10 +24,9 @@ class JPAPIIntegrationService:
             # Get JPAPI command for object type
             jpapi_command = self._get_jpapi_command(object_type)
 
-            # Build command
+            # Build command using installed jpapi command
             cmd = [
-                "python",
-                self.jpapi_main_path,
+                self.jpapi_command,
                 "export",
                 jpapi_command,
                 "--env",

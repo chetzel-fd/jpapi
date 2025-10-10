@@ -8,7 +8,7 @@ import json
 import sqlite3
 from pathlib import Path
 from typing import Dict, Optional
-from src.interfaces.cache_storage import ICacheStorage
+from interfaces.cache_storage import ICacheStorage
 from .cache_types import CacheEntry
 
 

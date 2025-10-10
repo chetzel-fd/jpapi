@@ -5,7 +5,7 @@ Creates and manages device manager instances
 """
 
 from typing import Dict, Type, Optional
-from src.interfaces import IDeviceManager
+from interfaces import IDeviceManager
 from ..managers import ComputerManager, MobileDeviceManager
 
 

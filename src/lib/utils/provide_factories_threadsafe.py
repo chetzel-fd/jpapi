@@ -6,8 +6,8 @@ Implements lazy loading of factory instances with thread safety
 
 import threading
 from typing import Any, Dict, Optional, Type, TypeVar, cast
-from src.interfaces.factory import IFactory
-from src.interfaces.factory_provider import IFactoryProvider
+from interfaces.factory import IFactory
+from interfaces.factory_provider import IFactoryProvider
 
 T = TypeVar("T")  # Type of object being created
 C = TypeVar("C")  # Type of configuration

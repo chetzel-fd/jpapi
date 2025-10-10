@@ -7,7 +7,7 @@ Implements configuration storage using JSON files
 import json
 from pathlib import Path
 from typing import Optional
-from src.interfaces.config_storage import IConfigStorage
+from interfaces.config_storage import IConfigStorage
 
 
 class FileConfigStorage(IConfigStorage):

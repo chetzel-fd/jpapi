@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """
 Main CLI Runner for jpapi
-Replaces the monolithic jpapi_core with a modular architecture
+Clean modular architecture with SOLID principles
 """
 import sys
 import argparse
 from pathlib import Path
 from typing import List, Optional
 
-# Add project root to path for entry point (jpapi_main.py is now in src/)
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.cli.base import registry
-from src.cli.commands import (
+# No sys.path hacks - proper package imports with pure src/ layout
+from cli.base import registry
+from cli.commands import (
     ListCommand,
     ExportCommand,
     SearchCommand,
@@ -28,16 +26,16 @@ from src.cli.commands import (
     PPPCCommand,
     ManifestCommand,
 )
-from src.cli.commands.setup_command import SetupCommand
-from src.cli.commands.backup_command import BackupCommand
-from src.cli.commands.advanced_searches_command import AdvancedSearchesCommand
-from src.cli.commands.extension_attributes_command import ExtensionAttributesCommand
-from src.cli.commands.mobile_apps_command import MobileAppsCommand
-from src.cli.commands.packages_command import PackagesCommand
-from src.cli.commands.delete_command import DeleteCommand
-from src.cli.commands.profiles_scoped_command import ProfilesScopedCommand
-from src.cli.commands.safety_command import SafetyCommand
-from src.cli.commands.roles_command import RolesCommand
+from cli.commands.setup_command import SetupCommand
+from cli.commands.backup_command import BackupCommand
+from cli.commands.advanced_searches_command import AdvancedSearchesCommand
+from cli.commands.extension_attributes_command import ExtensionAttributesCommand
+from cli.commands.mobile_apps_command import MobileAppsCommand
+from cli.commands.packages_command import PackagesCommand
+from cli.commands.delete_command import DeleteCommand
+from cli.commands.profiles_scoped_command import ProfilesScopedCommand
+from cli.commands.safety_command import SafetyCommand
+from cli.commands.roles_command import RolesCommand
 
 
 class JPAPIDevCLI:

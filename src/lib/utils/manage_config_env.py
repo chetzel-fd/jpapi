@@ -7,7 +7,7 @@ Implements configuration management using environment variables
 import os
 import json
 from typing import Dict, Optional, Type, TypeVar, cast
-from src.interfaces.config_manager import IConfigManager, ConfigValue
+from interfaces.config_manager import IConfigManager, ConfigValue
 
 T = TypeVar("T", bound=ConfigValue)  # Type of configuration value
 

@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 
 # Import export utilities with fallback
 try:
-    from src.lib.exports.export_utils import (
+    from lib.exports.export_utils import (
         get_export_file_pattern,
         get_export_directory,
         clean_old_exports,

@@ -6,7 +6,7 @@ Manages multiple device types through a single interface
 
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from src.interfaces import IDeviceManager
+from interfaces import IDeviceManager
 
 
 class MultiDeviceManager(IDeviceManager):

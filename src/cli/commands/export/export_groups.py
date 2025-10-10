@@ -9,7 +9,7 @@ from argparse import Namespace
 from .export_base import ExportBase
 from core.logging.command_mixin import log_operation, with_progress
 import json
-from src.lib.utils import create_jamf_hyperlink
+from lib.utils import create_jamf_hyperlink
 
 
 class ExportComputerGroups(ExportBase):
@@ -195,7 +195,7 @@ class ExportAdvancedSearches(ExportBase):
         self, data: List[Dict[str, Any]], args: Namespace
     ) -> List[Dict[str, Any]]:
         """Apply filtering to search data using unified filter system"""
-        from src.lib.utils import create_filter
+        from lib.utils import create_filter
 
         filtered = data
 

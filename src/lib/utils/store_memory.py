@@ -5,7 +5,7 @@ Implements in-memory cache storage with LRU eviction
 """
 
 from typing import Dict, Optional
-from src.interfaces.cache_storage import ICacheStorage
+from interfaces.cache_storage import ICacheStorage
 from .cache_types import CacheEntry
 
 

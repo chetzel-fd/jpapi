@@ -28,7 +28,7 @@ launcher_running = True
 BACKEND_URL = "http://localhost:8900"
 
 # Import unified backend client
-from src.lib.utils.connect_backend import BackendClient
+from lib.utils.connect_backend import BackendClient
 
 # Initialize backend client
 backend_client = BackendClient()

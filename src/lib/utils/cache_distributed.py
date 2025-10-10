@@ -7,7 +7,7 @@ Implements a distributed caching system across multiple nodes
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import hashlib
-from src.interfaces import ICacheManager
+from interfaces import ICacheManager
 
 
 class DistributedCache(ICacheManager):

@@ -274,5 +274,22 @@ object_counts_enhancement_suggestions.md
 *_manifest*.csv
 
 # =============================================================================
+# REFACTORING V2.0 - OLD STRUCTURE (if any artifacts remain)
+# =============================================================================
+
+# Old structure directories (moved to src/)
+/core/
+/lib/
+/resources/
+
+# Old entry point (removed in v2.0)
+/jpapi_main.py
+
+# Python cache in new locations
+src/**/__pycache__/
+src/**/*.pyc
+src/**/*.pyo
+
+# =============================================================================
 # END OF GITIGNORE
 # =============================================================================

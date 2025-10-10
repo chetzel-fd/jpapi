@@ -6,7 +6,7 @@ Implements a multi-layer caching system
 
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
-from src.interfaces import ICacheManager
+from interfaces import ICacheManager
 
 
 class LayeredCache(ICacheManager):

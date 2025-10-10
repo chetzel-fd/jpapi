@@ -193,7 +193,7 @@ def load_csv_data(environment="dev") -> pd.DataFrame:
 
     # Try to use new export utilities first
     try:
-        from src.lib.exports.export_utils import (
+        from lib.exports.export_utils import (
             get_export_file_pattern,
             get_export_directory,
         )
@@ -747,7 +747,7 @@ def main():
 
         # Show instance prefix
         try:
-            from src.lib.exports.export_utils import get_instance_prefix
+            from lib.exports.export_utils import get_instance_prefix
 
             instance_prefix = get_instance_prefix(environment)
             st.info(f"Instance: {instance_prefix}")

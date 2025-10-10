@@ -5,8 +5,8 @@ Creates and manages cache manager instances
 """
 
 from typing import Dict, Type, Optional, Any
-from src.interfaces import ICacheManager
-from src.interfaces.factory import IFactory, ConfigurationError
+from interfaces import ICacheManager
+from interfaces.factory import IFactory, ConfigurationError
 from ..utils import FileCache
 
 

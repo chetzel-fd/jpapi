@@ -8,8 +8,8 @@ from typing import Dict, Any, List, Optional
 from argparse import Namespace
 from .export_base import ExportBase
 import json
-from src.lib.utils import create_jamf_hyperlink
-from src.lib.exports.manage_exports import get_export_directory
+from lib.utils import create_jamf_hyperlink
+from lib.exports.manage_exports import get_export_directory
 from core.logging.command_mixin import log_operation
 
 
@@ -76,7 +76,7 @@ class ExportPackages(ExportBase):
 
         # Apply filtering if specified
         if hasattr(args, "filter") and args.filter:
-            from src.lib.utils import create_filter
+            from lib.utils import create_filter
 
             filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             original_count = len(data)

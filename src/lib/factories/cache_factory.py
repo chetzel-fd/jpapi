@@ -6,7 +6,7 @@ Creates and manages cache manager instances
 
 from typing import Dict, Type, Optional
 from pathlib import Path
-from src.interfaces import ICacheManager
+from interfaces import ICacheManager
 from ..utils import FileCache
 
 

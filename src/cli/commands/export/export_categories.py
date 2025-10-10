@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from argparse import Namespace
 from .export_base import ExportBase
 import json
-from src.lib.utils import create_jamf_hyperlink
+from lib.utils import create_jamf_hyperlink
 
 
 class ExportCategories(ExportBase):

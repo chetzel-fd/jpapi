@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.interfaces.config_storage import IConfigStorage
+    from interfaces.config_storage import IConfigStorage
 import re
 
 

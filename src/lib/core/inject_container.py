@@ -5,7 +5,7 @@ Manages factory instances and dependencies
 """
 
 from typing import Dict, TypeVar, Any, Optional
-from src.interfaces.factory import IFactory
+from interfaces.factory import IFactory
 
 T = TypeVar("T")  # Type of object being created
 

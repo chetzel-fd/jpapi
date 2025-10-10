@@ -9,7 +9,7 @@ from argparse import Namespace
 from .export_base import ExportBase
 from .profile_analyzers import ProfileAnalyzerFactory
 from core.logging.command_mixin import log_operation, with_progress
-from src.lib.utils import create_jamf_hyperlink
+from lib.utils import create_jamf_hyperlink
 
 
 class ExportProfiles(ExportBase):
@@ -59,7 +59,7 @@ class ExportProfiles(ExportBase):
 
         # Apply filtering if specified (before detailed processing)
         if hasattr(args, "filter") and args.filter:
-            from src.lib.utils import create_filter
+            from lib.utils import create_filter
 
             filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             original_count = len(data)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 JPAPI - JAMF Pro API Toolkit
-Distribution package with optional experimental UI features
+Clean SOLID architecture with pure src/ layout
 """
 
 from setuptools import setup, find_packages
@@ -13,20 +13,20 @@ readme_path = this_directory / "README.md"
 if readme_path.exists():
     long_description = readme_path.read_text()
 else:
-    long_description = "JAMF Pro API toolkit with optional experimental UI features"
+    long_description = "JAMF Pro API toolkit with SOLID architecture"
 
 setup(
     name="jpapi",
-    version="1.1.0",
+    version="2.0.0",  # Major version for architectural change
     author="JPAPI Contributors",
     author_email="maintainers@jpapi.dev",
-    description="JAMF Pro API toolkit with optional experimental UI features",
+    description="JAMF Pro API toolkit with SOLID architecture",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jpapi/jpapi",
-    # Use py_modules since jpapi_main.py is now in src/
-    py_modules=["src.jpapi_main"],
-    packages=find_packages(where=".", include=["src*", "core*", "resources*"]),
+    url="https://github.com/chetzel-fd/jpapi",
+    # Pure src/ layout - all packages are in src/
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: System Administrators",
@@ -43,8 +43,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.8",
+    # Core dependencies - always required
     install_requires=[
-        # Core dependencies - always required
         "requests>=2.25.0",
         "psutil>=5.8.0",
         "pandas>=1.3.0",
@@ -54,6 +54,7 @@ setup(
         "python-dateutil>=2.8.0",
         "pyjwt>=2.4.0",
     ],
+    # Optional features
     extras_require={
         "ui": [
             # EXPERIMENTAL UI FEATURES - Optional and potentially unstable
@@ -87,15 +88,15 @@ setup(
             "sqlalchemy>=2.0.0",
         ],
     },
+    # Direct entry point (no path hacks needed)
     entry_points={
         "console_scripts": [
-            "jpapi=src.jpapi_main:main",
+            "jpapi=jpapi_main:main",
         ],
     },
     include_package_data=True,
     package_data={
-        "": ["*.md", "*.txt", "*.json", "*.yaml", "*.yml"],
-        "src": ["**/*"],
+        "": ["*.json", "*.yaml", "*.yml", "*.md"],
     },
     zip_safe=False,
     keywords=[
@@ -104,9 +105,6 @@ setup(
         "device-management",
         "api",
         "cli",
-        "experimental-ui",
-        "optional-features",
-        "streamlit",
-        "dash",
+        "solid-architecture",
     ],
 )

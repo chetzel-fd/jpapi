@@ -5,7 +5,7 @@ Combines multiple connection analyzers into a single interface
 """
 
 from typing import Dict, List, Any, Optional
-from src.interfaces import IConnectionAnalyzer
+from interfaces import IConnectionAnalyzer
 
 
 class CompositeAnalyzer(IConnectionAnalyzer):

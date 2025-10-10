@@ -5,7 +5,7 @@ Implements in-memory storage for stats and object lists
 """
 
 from typing import Dict, Any, Optional
-from src.interfaces.stats_storage import IStatsStorage
+from interfaces.stats_storage import IStatsStorage
 
 
 class MemoryStatsStorage(IStatsStorage):

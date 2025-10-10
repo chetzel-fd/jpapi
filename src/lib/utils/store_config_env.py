@@ -6,7 +6,7 @@ Implements configuration storage using environment variables
 
 import os
 from typing import Optional
-from src.interfaces.config_storage import IConfigStorage
+from interfaces.config_storage import IConfigStorage
 
 
 class EnvConfigStorage(IConfigStorage):

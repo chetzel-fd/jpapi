@@ -16,7 +16,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.tools.profile_manifests import (
+from tools.profile_manifests import (
     ProfileManifestManager,
     ManifestResult,
     ManifestInfo,
@@ -24,7 +24,7 @@ from src.tools.profile_manifests import (
 
 # Try to import ConfigManager, fallback to mock if not available
 try:
-    from src.core.config.config_manager import ConfigManager
+    from core.config.config_manager import ConfigManager
 except ImportError:
     # Mock ConfigManager for standalone usage
     class ConfigManager:
