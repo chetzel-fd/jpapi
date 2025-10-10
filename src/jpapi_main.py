@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Main CLI Runner for jpapi
-Clean modular architecture with SOLID principles
+Modular command-based architecture
 """
 import sys
 import argparse

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 JPAPI - JAMF Pro API Toolkit
-Clean SOLID architecture with pure src/ layout
+Modular architecture with clean package structure
 """
 
 from setuptools import setup, find_packages
@@ -17,10 +17,10 @@ else:
 
 setup(
     name="jpapi",
-    version="2.0.0",  # Major version for architectural change
+    version="2.0.0",
     author="JPAPI Contributors",
     author_email="maintainers@jpapi.dev",
-    description="JAMF Pro API toolkit with SOLID architecture",
+    description="JAMF Pro API toolkit with modular architecture",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/chetzel-fd/jpapi",

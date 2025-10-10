@@ -19,7 +19,7 @@ This script will:
 - ✅ Install system dependencies (jq, curl)
 - ✅ Clone the repository to `~/.jpapi`
 - ✅ Create a virtual environment
-- ✅ Install JPAPI v2.0 with SOLID architecture
+- ✅ Install JPAPI v2.0 with clean architecture
 - ✅ Create a global `jpapi` command in `~/.local/bin`
 - ✅ Verify the installation works
 - ✅ Add to your PATH automatically
