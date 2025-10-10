@@ -39,6 +39,26 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+# Check permissions
+check_permissions() {
+    print_info "Checking permissions..."
+    
+    # Check if we can write to home directory
+    if [ ! -w "$HOME" ]; then
+        print_error "Cannot write to home directory: $HOME"
+        print_error "Please check file ownership and permissions"
+        exit 1
+    fi
+    
+    # Check if we can create .local/bin directory
+    if [ ! -w "$HOME" ] && [ ! -d "$HOME/.local" ]; then
+        print_error "Cannot create ~/.local directory"
+        exit 1
+    fi
+    
+    print_success "Permissions look good"
+}
+
 # Check if Python 3 is available
 check_python() {
     if command -v python3 >/dev/null 2>&1; then
@@ -154,10 +174,25 @@ create_symlink() {
     
     # Add to PATH if not already there
     if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-        print_warning "Added ~/.local/bin to PATH in ~/.bashrc and ~/.zshrc"
+        # Try to add to bashrc (with error handling)
+        if [ -w "$HOME/.bashrc" ] || [ ! -f "$HOME/.bashrc" ]; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+            print_success "Added ~/.local/bin to PATH in ~/.bashrc"
+        else
+            print_warning "Cannot write to ~/.bashrc (permission denied)"
+        fi
+        
+        # Try to add to zshrc (with error handling)
+        if [ -w "$HOME/.zshrc" ] || [ ! -f "$HOME/.zshrc" ]; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+            print_success "Added ~/.local/bin to PATH in ~/.zshrc"
+        else
+            print_warning "Cannot write to ~/.zshrc (permission denied)"
+        fi
+        
         print_warning "Please run: source ~/.bashrc (or restart your terminal)"
+        print_warning "If you got permission errors, manually add this to your shell config:"
+        print_warning "export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
     
     print_success "Symlink created"
@@ -182,6 +217,9 @@ test_installation() {
 # Main installation function
 main() {
     print_header
+    
+    # Check permissions first
+    check_permissions
     
     # Check prerequisites
     check_python
