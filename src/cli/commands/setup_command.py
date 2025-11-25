@@ -171,6 +171,27 @@ class SetupCommand(BaseCommand):
     def _interactive_setup(self, args: Namespace) -> int:
         """Run the interactive setup process with keychain detection"""
         try:
+            # Show welcome message and guidance
+            print("🔐 JPAPI Setup - Authentication Configuration")
+            print("=" * 60)
+            print()
+            print("This wizard will help you configure JPAPI to connect to your JAMF Pro server.")
+            print()
+            print("What you'll need:")
+            print("  • Your JAMF Pro server URL (e.g., company.jamfcloud.com)")
+            print("  • OAuth credentials (recommended) OR Basic Auth credentials")
+            print()
+            print("Getting OAuth Credentials:")
+            print("  1. Log into JAMF Pro")
+            print("  2. Go to: Settings → System Settings → API Roles and Clients")
+            print("  3. Click 'New' to create an API Client")
+            print("  4. Copy the JSON response (contains client_id and client_secret)")
+            print()
+            print("✨ Tip: JPAPI auto-detects existing credentials in your macOS Keychain!")
+            print()
+            print("-" * 60)
+            print()
+            
             # Check for existing keychain credentials
             existing_creds = self._detect_keychain_credentials()
 
