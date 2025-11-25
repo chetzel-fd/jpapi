@@ -17,7 +17,27 @@ NC='\033[0m'
 
 # Configuration
 REPO_URL="https://github.com/chetzel-fd/jpapi.git"
-INSTALL_DIR="$HOME/.jpapi"
+
+# Detect actual user (handle sudo/root cases)
+if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    # Running as root via sudo - use the original user
+    ACTUAL_USER="$SUDO_USER"
+    ACTUAL_HOME=$(getent passwd "$ACTUAL_USER" | cut -d: -f6)
+    print_warning "Running as root via sudo. Installing for user: $ACTUAL_USER"
+elif [ "$EUID" -eq 0 ]; then
+    # Running as root directly - warn
+    print_error "Running as root is not recommended!"
+    print_error "Please run this script as a regular user, or use sudo -u <user>"
+    print_error "If you continue, JPAPI will be installed in /root/.jpapi"
+    ACTUAL_USER="root"
+    ACTUAL_HOME="$HOME"
+else
+    # Running as regular user
+    ACTUAL_USER="$USER"
+    ACTUAL_HOME="$HOME"
+fi
+
+INSTALL_DIR="$ACTUAL_HOME/.jpapi"
 VENV_DIR="$INSTALL_DIR/venv"
 
 print_header() {
@@ -47,17 +67,23 @@ print_info() {
 check_permissions() {
     echo -e "${BLUE}ℹ️  Checking permissions...${NC}"
     
-    # Check if we can write to home directory
-    if [ ! -w "$HOME" ]; then
-        echo -e "${RED}❌ Cannot write to home directory: $HOME${NC}"
+    # Check if we can write to actual home directory
+    if [ ! -w "$ACTUAL_HOME" ]; then
+        echo -e "${RED}❌ Cannot write to home directory: $ACTUAL_HOME${NC}"
         echo -e "${RED}❌ Please check file ownership and permissions${NC}"
         exit 1
     fi
     
     # Check if we can create .local/bin directory
-    if [ ! -w "$HOME" ] && [ ! -d "$HOME/.local" ]; then
+    if [ ! -w "$ACTUAL_HOME" ] && [ ! -d "$ACTUAL_HOME/.local" ]; then
         echo -e "${RED}❌ Cannot create ~/.local directory${NC}"
         exit 1
+    fi
+    
+    # If running as root for another user, fix ownership of existing installation
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ] && [ -d "$INSTALL_DIR" ]; then
+        print_warning "Fixing ownership of existing installation for user: $ACTUAL_USER"
+        chown -R "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR" 2>/dev/null || true
     fi
     
     echo -e "${GREEN}✅ Permissions look good${NC}"
@@ -141,6 +167,13 @@ setup_repository() {
         git clone "$REPO_URL" "$INSTALL_DIR"
         cd "$INSTALL_DIR"
     fi
+    
+    # Fix ownership if running as root for another user
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        print_warning "Fixing ownership of repository for user: $ACTUAL_USER"
+        chown -R "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR" 2>/dev/null || true
+    fi
+    
     print_success "Repository ready"
 }
 
@@ -192,6 +225,12 @@ setup_venv() {
     # Upgrade pip
     pip install --upgrade pip
     
+    # Fix ownership if running as root for another user
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        print_warning "Fixing ownership of virtual environment for user: $ACTUAL_USER"
+        chown -R "$ACTUAL_USER:$ACTUAL_USER" "$VENV_DIR" 2>/dev/null || true
+    fi
+    
     print_success "Virtual environment ready (Python $VENV_PYTHON_VERSION)"
 }
 
@@ -223,6 +262,12 @@ install_jpapi() {
     # Make executable if needed
     chmod +x "$VENV_DIR/bin/jpapi"
     
+    # Fix ownership if running as root for another user
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        print_warning "Fixing ownership of installation for user: $ACTUAL_USER"
+        chown -R "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR" 2>/dev/null || true
+    fi
+    
     print_success "JPAPI installed successfully"
 }
 
@@ -230,36 +275,69 @@ install_jpapi() {
 create_symlink() {
     print_warning "Creating symlink for easy access..."
     
+    # Use actual user's home directory
+    LOCAL_BIN_DIR="$ACTUAL_HOME/.local/bin"
+    
     # Create ~/.local/bin if it doesn't exist
-    mkdir -p "$HOME/.local/bin"
+    mkdir -p "$LOCAL_BIN_DIR"
+    
+    # Fix permissions if running as root for another user
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        chown -R "$ACTUAL_USER:$ACTUAL_USER" "$LOCAL_BIN_DIR" 2>/dev/null || true
+    fi
     
     # Create symlink
-    ln -sf "$VENV_DIR/bin/jpapi" "$HOME/.local/bin/jpapi"
+    ln -sf "$VENV_DIR/bin/jpapi" "$LOCAL_BIN_DIR/jpapi"
+    
+    # Fix symlink ownership if needed
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        chown -h "$ACTUAL_USER:$ACTUAL_USER" "$LOCAL_BIN_DIR/jpapi" 2>/dev/null || true
+    fi
     
     # Add to PATH if not already there
-    if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
-        # Try to add to bashrc (with error handling)
-        if [ -w "$HOME/.bashrc" ] || [ ! -f "$HOME/.bashrc" ]; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-            print_success "Added ~/.local/bin to PATH in ~/.bashrc"
-        else
-            print_warning "Cannot write to ~/.bashrc (permission denied)"
+    if ! echo "$PATH" | grep -q "$ACTUAL_HOME/.local/bin"; then
+        # Determine which shell config files to update
+        SHELL_CONFIGS=()
+        if [ -f "$ACTUAL_HOME/.bashrc" ] || [ ! -f "$ACTUAL_HOME/.bashrc" ]; then
+            SHELL_CONFIGS+=("$ACTUAL_HOME/.bashrc")
+        fi
+        if [ -f "$ACTUAL_HOME/.zshrc" ] || [ ! -f "$ACTUAL_HOME/.zshrc" ]; then
+            SHELL_CONFIGS+=("$ACTUAL_HOME/.zshrc")
         fi
         
-        # Try to add to zshrc (with error handling)
-        if [ -w "$HOME/.zshrc" ] || [ ! -f "$HOME/.zshrc" ]; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-            print_success "Added ~/.local/bin to PATH in ~/.zshrc"
+        # Add PATH export to shell configs
+        for config_file in "${SHELL_CONFIGS[@]}"; do
+            if [ -w "$config_file" ] || [ ! -f "$config_file" ]; then
+                # Check if already added
+                if ! grep -q '\.local/bin' "$config_file" 2>/dev/null; then
+                    echo '' >> "$config_file"
+                    echo '# JPAPI - Add to PATH' >> "$config_file"
+                    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$config_file"
+                    
+                    # Fix ownership if running as root for another user
+                    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+                        chown "$ACTUAL_USER:$ACTUAL_USER" "$config_file" 2>/dev/null || true
+                    fi
+                    
+                    print_success "Added ~/.local/bin to PATH in $(basename "$config_file")"
+                fi
+            else
+                print_warning "Cannot write to $config_file (permission denied)"
+            fi
+        done
+        
+        if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+            print_warning "Running as root - PATH updated for user: $ACTUAL_USER"
+            print_warning "User $ACTUAL_USER should run: source ~/.bashrc (or restart terminal)"
         else
-            print_warning "Cannot write to ~/.zshrc (permission denied)"
+            print_warning "Please run: source ~/.bashrc (or restart your terminal)"
         fi
         
-        print_warning "Please run: source ~/.bashrc (or restart your terminal)"
-        print_warning "If you got permission errors, manually add this to your shell config:"
+        print_warning "If PATH is not set, manually add this to your shell config:"
         print_warning "export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
     
-    print_success "Symlink created"
+    print_success "Symlink created at $LOCAL_BIN_DIR/jpapi"
     
     # Show usage instructions
     echo
@@ -348,15 +426,24 @@ main() {
     echo
     print_success "🎉 JPAPI installed successfully!"
     echo
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        echo "⚠️  Installed for user: $ACTUAL_USER"
+        echo "⚠️  User $ACTUAL_USER should run the following commands (not as root):"
+        echo
+    fi
     echo "JPAPI is installed in: $INSTALL_DIR"
     echo "Virtual environment: $VENV_DIR"
-    echo "Symlink location: $HOME/.local/bin/jpapi"
+    echo "Symlink location: $ACTUAL_HOME/.local/bin/jpapi"
     echo
     echo "Next steps:"
     echo "1. To use jpapi, either:"
     echo "   - Use full path: $VENV_DIR/bin/jpapi setup"
     echo "   - Or add to PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
-    echo "   - Then reload shell: source ~/.bashrc (or source ~/.zshrc)"
+    if [ "$EUID" -eq 0 ] && [ "$ACTUAL_USER" != "root" ]; then
+        echo "   - Then user $ACTUAL_USER should reload shell: source ~/.bashrc (or source ~/.zshrc)"
+    else
+        echo "   - Then reload shell: source ~/.bashrc (or source ~/.zshrc)"
+    fi
     echo
     echo "2. Run: jpapi setup (or $VENV_DIR/bin/jpapi setup)"
     echo "3. Configure your JAMF Pro credentials"
