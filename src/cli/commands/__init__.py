@@ -15,6 +15,8 @@ from .dashboard_command import DashboardCommand
 from .installomator_command import InstallomatorCommand
 from .pppc_command import PPPCCommand
 from .manifest_command_class import ManifestCommand
+from .certificate_command import CertificateCommand
+from .crowdstrike_command import CrowdStrikeCommand
 
 __all__ = [
     "ListCommand",
@@ -32,4 +34,6 @@ __all__ = [
     "InstallomatorCommand",
     "PPPCCommand",
     "ManifestCommand",
+    "CertificateCommand",
+    "CrowdStrikeCommand",
 ]

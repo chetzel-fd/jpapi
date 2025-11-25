@@ -311,6 +311,79 @@ class SetupCommand(BaseCommand):
             print(f"   ⚠️  Could not save to keychain: {e}")
             return False
 
+    def _save_to_unified_keychain(
+        self, label: str, url: str, client_id: str, client_secret: str
+    ) -> bool:
+        """Save credentials to keychain in UnifiedJamfAuth format"""
+        try:
+            print(f"\n💾 Saving to keychain (UnifiedJamfAuth format)...")
+
+            # Map label to service name and account name
+            # UnifiedJamfAuth expects:
+            # - service: jpapi_sandbox or jpapi_production
+            # - account: sandbox or production (or dev/prod)
+            service_mapping = {
+                "dev": ("jpapi_sandbox", "sandbox"),
+                "sandbox": ("jpapi_sandbox", "sandbox"),
+                "prod": ("jpapi_production", "prod"),
+                "production": ("jpapi_production", "prod"),
+            }
+
+            service_name, account_name = service_mapping.get(
+                label.lower(), (f"jpapi_{label}", label)
+            )
+
+            # Create credential data as JSON (format expected by UnifiedJamfAuth)
+            cred_data = json.dumps(
+                {
+                    "url": url,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "token": None,
+                    "refresh_token": None,
+                    "token_expires": None,
+                }
+            )
+
+            # Delete existing entry if it exists
+            delete_cmd = [
+                "security",
+                "delete-generic-password",
+                "-s",
+                service_name,
+                "-a",
+                account_name,
+            ]
+            subprocess.run(delete_cmd, capture_output=True, text=True)
+
+            # Add new entry
+            add_cmd = [
+                "security",
+                "add-generic-password",
+                "-a",
+                account_name,
+                "-s",
+                service_name,
+                "-w",
+                cred_data,
+                "-U",  # Update if exists
+            ]
+
+            result = subprocess.run(add_cmd, capture_output=True, text=True)
+
+            if result.returncode == 0:
+                print(f"   ✅ Saved to keychain!")
+                print(f"      Service: {service_name}")
+                print(f"      Account: {account_name}")
+                return True
+            else:
+                print(f"   ⚠️  Failed to save: {result.stderr}")
+                return False
+
+        except Exception as e:
+            print(f"   ⚠️  Could not save to keychain: {e}")
+            return False
+
     def _detect_keychain_credentials(self) -> Dict[str, Dict[str, Any]]:
         """Detect existing JPAPI credentials in keychain"""
         credentials = {}
@@ -391,6 +464,46 @@ class SetupCommand(BaseCommand):
         try:
             print(f"\n✅ Using existing credentials for '{label}'")
 
+            # Ask if they want to update or use as-is
+            print("\nWhat would you like to do?")
+            print("  1) Use these credentials as-is")
+            print("  2) Update with new credentials (paste JSON)")
+            print("  3) Cancel")
+
+            choice = input("\nChoice (1-3): ").strip()
+
+            if choice == "2":
+                # Update credentials
+                print("\n🔑 Update OAuth Credentials")
+                print("   Paste the JSON from JAMF:")
+                print('   (Example: {"client_id":"...","client_secret":"..."})')
+                json_input = input("   JSON: ").strip()
+
+                try:
+                    new_creds = json.loads(json_input)
+                    client_id = new_creds.get("client_id", "")
+                    client_secret = new_creds.get("client_secret", "")
+
+                    if not client_id or not client_secret:
+                        print("   ⚠️  JSON doesn't contain client_id or client_secret")
+                        return 1
+
+                    # Update credentials in keychain
+                    url = credentials.get("url", "")
+                    print(f"\n   Updating credentials for: {url}")
+                    self._save_to_unified_keychain(label, url, client_id, client_secret)
+
+                    # Update local credentials dict
+                    credentials["client_id"] = client_id
+                    credentials["client_secret"] = client_secret
+
+                except json.JSONDecodeError as e:
+                    print(f"   ⚠️  Invalid JSON format: {e}")
+                    return 1
+            elif choice == "3":
+                print("   Cancelled")
+                return 0
+
             # Save to the standard location
             config_path = Path("resources/config/authentication.json")
             config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -428,8 +541,10 @@ class SetupCommand(BaseCommand):
         try:
             # Get label (optional, defaults to 'dev')
             print("\n🏷️  Label")
-            print("   Give this credential set a name (e.g., dev, prod, sandbox)")
-            label = input("   Label (default: dev): ").strip() or "dev"
+            print(
+                "   Give this credential set a name (e.g., sandbox, production, staging)"
+            )
+            label = input("   Label (default: sandbox): ").strip() or "sandbox"
 
             # Get URL
             print("\n🌐 JAMF Server URL")
@@ -522,11 +637,8 @@ class SetupCommand(BaseCommand):
             print(f"   URL: {jamf_url}")
             print(f"   Configuration saved to: {config_path}")
 
-            # Optionally save to keychain
-            if hasattr(args, "save_to_keychain") and args.save_to_keychain:
-                self._save_to_keychain(
-                    label, jamf_url, client_id, client_secret, "oauth"
-                )
+            # Save to keychain for UnifiedJamfAuth compatibility
+            self._save_to_unified_keychain(label, jamf_url, client_id, client_secret)
 
             # Test connection
             return self._test_auth_connection(args)
@@ -617,7 +729,7 @@ class SetupCommand(BaseCommand):
             # Test authentication
             from core.auth.login_manager import UnifiedJamfAuth
 
-            auth = UnifiedJamfAuth(environment="dev")
+            auth = UnifiedJamfAuth(environment=getattr(self, "environment", "sandbox"))
             token_result = auth.get_token()
 
             if hasattr(token_result, "success") and token_result.success:

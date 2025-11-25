@@ -24,7 +24,7 @@ try:
 except ImportError:
     # Mock ConfigManager for standalone usage
     class ConfigManager:
-        def __init__(self, environment="dev"):
+        def __init__(self, environment="sandbox"):
             self.environment = environment
 
 
@@ -37,8 +37,8 @@ def pppc():
 @pppc.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option(
@@ -121,8 +121,8 @@ def scan(
 @pppc.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--app-path", required=True, help="Path to the application bundle")
@@ -178,8 +178,8 @@ def generate(env: str, app_path: str, output: Optional[str]):
 @pppc.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--profiles-dir", help="Directory containing PPPC profiles")

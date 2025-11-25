@@ -79,6 +79,12 @@ class InstallomatorService:
             AppInfo(
                 "Adobe Acrobat", "adobeacrobat", "Adobe Acrobat Reader", "Productivity"
             ),
+            AppInfo(
+                "Adobe Creative Cloud Desktop",
+                "adobecreativeclouddesktop",
+                "Adobe Creative Cloud Desktop application",
+                "Productivity",
+            ),
             AppInfo("1Password", "1password", "1Password password manager", "Security"),
             AppInfo("Dropbox", "dropbox", "Dropbox file sync", "Storage"),
             AppInfo("Spotify", "spotify", "Spotify music streaming", "Entertainment"),
@@ -160,8 +166,16 @@ class InstallomatorService:
         return self.create_policy(config)
 
     def create_policy(self, config: PolicyConfig) -> PolicyResult:
-        """Create a single policy"""
+        """Create a single policy with duplicate protection"""
         try:
+            # Check for existing policy with same name
+            existing_policies = self._check_existing_policies(config.policy_name)
+            if existing_policies:
+                return PolicyResult(
+                    success=False,
+                    error_message=f"Policy with name '{config.policy_name}' already exists (IDs: {', '.join(existing_policies)})",
+                )
+
             # This would normally create the policy via JAMF API
             # For now, we'll simulate success
             print(f"🚀 Creating policy: {config.policy_name}")
@@ -185,6 +199,12 @@ class InstallomatorService:
             return PolicyResult(
                 success=False, error_message=f"Failed to create policy: {str(e)}"
             )
+
+    def _check_existing_policies(self, policy_name: str) -> List[str]:
+        """Check for existing policies with the same name"""
+        # This would normally query JAMF API for existing policies
+        # For now, return empty list (no duplicates found)
+        return []
 
     def create_batch_policies(self, configs: List[PolicyConfig]) -> List[PolicyResult]:
         """Create multiple policies from a batch"""

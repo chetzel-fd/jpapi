@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def get_instance_prefix(environment: str = "dev") -> str:
+def get_instance_prefix(environment: str = "sandbox") -> str:
     """
     Get the instance prefix for the given environment
 
@@ -21,10 +21,11 @@ def get_instance_prefix(environment: str = "dev") -> str:
     """
     # Map environments to instance prefixes
     instance_mapping = {
-        "dev": "sandbox",
-        "development": "sandbox",
+        "dev": "sandbox",  # alias
+        "development": "sandbox",  # alias
+        "sandbox": "sandbox",
         "staging": "staging",
-        "prod": "production",
+        "prod": "production",  # alias
         "production": "production",
         "test": "test",
         "testing": "test",
@@ -36,7 +37,7 @@ def get_instance_prefix(environment: str = "dev") -> str:
 def generate_export_filename(
     object_type: str,
     format: str = "csv",
-    environment: str = "dev",
+    environment: str = "sandbox",
     timestamp: Optional[datetime] = None,
     custom_suffix: Optional[str] = None,
 ) -> str:

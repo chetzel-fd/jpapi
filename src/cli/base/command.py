@@ -1,132 +1,81 @@
 #!/usr/bin/env python3
 """
 Base Command Class for jpapi CLI
-Provides common functionality for all CLI commands
+Uses composition with extracted components for SRP compliance
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List, Union, Callable
+from abc import ABC
+from typing import Optional
 from argparse import ArgumentParser, Namespace
-from pathlib import Path
-import getpass
-import re
-from dataclasses import dataclass
-
-# Using proper package structure via pip install -e .
 
 from core.auth.login_factory import get_best_auth
+from resources.config.central_config import central_config
 from core.auth.login_types import AuthInterface
-from core.checks.check_manager import SafetyManager
 from core.logging.command_mixin import LoggingCommandMixin
-from lib.utils import create_filter, FilterField
 
-
-@dataclass
-class CommandPattern:
-    """Represents a conversational command pattern"""
-
-    pattern: str
-    handler: str
-    description: str
-    aliases: List[str] = None
-    required_args: List[str] = None
-    optional_args: Dict[str, Any] = None
-
-
-@dataclass
-class SubcommandConfig:
-    """Configuration for subcommand creation"""
-
-    name: str
-    aliases: List[str]
-    description: str
-    handler_method: str
-    arguments: List[Dict[str, Any]] = None
+from .output_formatter import OutputFormatter
+from .safety_validator import SafetyValidator
+from .pattern_matcher import PatternMatcher, CommandPattern
 
 
 class BaseCommand(ABC, LoggingCommandMixin):
-    """Base class for all CLI commands with logging capabilities"""
+    """Base class for all CLI commands with composition for SRP compliance"""
 
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
         self._auth: Optional[AuthInterface] = None
-        self.environment = "dev"  # Default environment
-        self.safety_manager = SafetyManager()
+        self.environment = central_config.environments.default
+
+        # Composed components (SRP)
+        self.output_formatter = OutputFormatter()
+        self.safety_validator = SafetyValidator()
+        self.pattern_matcher = PatternMatcher()
+
         # Initialize logging mixin
         LoggingCommandMixin.__init__(self)
 
-        # Configuration-driven patterns
-        self.conversational_patterns: List[CommandPattern] = []
-        self.subcommand_configs: List[SubcommandConfig] = []
+        # Setup patterns (template method)
         self._setup_patterns()
 
     def _setup_patterns(self):
         """Override in subclasses to define conversational patterns"""
         pass
 
-    def add_conversational_pattern(
-        self,
-        pattern: str,
-        handler: str,
-        description: str,
-        aliases: List[str] = None,
-        required_args: List[str] = None,
-        optional_args: Dict[str, Any] = None,
-    ):
-        """Add a conversational pattern"""
-        self.conversational_patterns.append(
-            CommandPattern(
-                pattern=pattern,
-                handler=handler,
-                description=description,
-                aliases=aliases or [],
-                required_args=required_args or [],
-                optional_args=optional_args or {},
-            )
-        )
-
-    def add_subcommand_config(
-        self,
-        name: str,
-        aliases: List[str],
-        description: str,
-        handler_method: str,
-        arguments: List[Dict[str, Any]] = None,
-    ):
-        """Add subcommand configuration"""
-        self.subcommand_configs.append(
-            SubcommandConfig(
-                name=name,
-                aliases=aliases,
-                description=description,
-                handler_method=handler_method,
-                arguments=arguments or [],
-            )
-        )
-
     @property
     def auth(self) -> AuthInterface:
         """Get authenticated instance (lazy loading)"""
         if self._auth is None:
-            environment = getattr(self, "environment", "dev")
+            raw_env = getattr(self, "environment", central_config.environments.default)
+            environment = central_config.normalize_environment(raw_env)
             self._auth = get_best_auth(environment)
         return self._auth
 
+    # Convenience methods that delegate to pattern_matcher
+    def add_conversational_pattern(self, *args, **kwargs):
+        """Add a conversational pattern"""
+        return self.pattern_matcher.add_conversational_pattern(*args, **kwargs)
+
+    def add_subcommand_config(self, *args, **kwargs):
+        """Add subcommand configuration"""
+        return self.pattern_matcher.add_subcommand_config(*args, **kwargs)
+
     def add_arguments(self, parser: ArgumentParser) -> None:
-        """Enhanced argument parsing with both conversational and traditional support"""
+        """
+        Enhanced argument parsing with conversational and traditional support
+        """
         # Add common arguments first
         self.setup_common_args(parser)
 
         # Create subcommands using configuration
-        if self.subcommand_configs:
+        if self.pattern_matcher.has_subcommands():
             subparsers = parser.add_subparsers(
                 dest="subcommand", help=f"{self.name.title()} operations"
             )
             self._create_subcommands(subparsers)
 
-        # Support flexible positional arguments for conversational patterns (only if no subcommands)
-        if not self.subcommand_configs:
+        # Support flexible positional arguments for conversational patterns
+        if not self.pattern_matcher.has_subcommands():
             parser.add_argument(
                 "target",
                 nargs="?",
@@ -139,7 +88,7 @@ class BaseCommand(ABC, LoggingCommandMixin):
 
     def _create_subcommands(self, subparsers):
         """Create subcommands from configuration"""
-        for config in self.subcommand_configs:
+        for config in self.pattern_matcher.subcommand_configs:
             # Create parser for main command name
             parser = subparsers.add_parser(config.name, help=config.description)
 
@@ -150,9 +99,7 @@ class BaseCommand(ABC, LoggingCommandMixin):
             # Add common args
             self.setup_common_args(parser)
 
-    def _add_argument_from_config(
-        self, parser: ArgumentParser, arg_config: Dict[str, Any]
-    ):
+    def _add_argument_from_config(self, parser: ArgumentParser, arg_config: dict):
         """Add argument from configuration dictionary"""
         name = arg_config.pop("name")
         parser.add_argument(name, **arg_config)
@@ -180,59 +127,35 @@ class BaseCommand(ABC, LoggingCommandMixin):
 
     def _handle_conversational_pattern(self, args: Namespace) -> int:
         """Handle conversational command patterns"""
-        target = args.target.lower()
-        action = args.action.lower() if args.action else ""
-        terms = args.terms if args.terms else []
-
-        # Build pattern string
-        pattern_parts = [target]
-        if action:
-            pattern_parts.append(action)
-        if terms:
-            pattern_parts.extend(terms)
-
-        pattern_string = " ".join(pattern_parts)
+        target, action, terms = self.pattern_matcher.parse_conversational_args(args)
+        pattern_string = self.pattern_matcher.build_pattern_string(
+            target, action, terms
+        )
 
         # Find matching pattern
-        matched_pattern = self._find_matching_pattern(pattern_string, target, action)
+        matched_pattern = self.pattern_matcher.find_matching_pattern(
+            pattern_string, target, action
+        )
 
         if matched_pattern:
             print(f"🔍 {matched_pattern.description}")
             return self._execute_handler(matched_pattern.handler, args, matched_pattern)
         else:
+            # Check if action is a numeric ID - if so, try with just target
+            if action and str(action).isdigit():
+                # Try to find pattern with just the target (e.g., "scripts")
+                target_pattern = self.pattern_matcher.find_matching_pattern(
+                    target, target, None
+                )
+                if target_pattern:
+                    print(f"🔍 {target_pattern.description}")
+                    return self._execute_handler(
+                        target_pattern.handler, args, target_pattern
+                    )
+
             print(f"❌ Could not understand: {pattern_string}")
             self._show_suggestions(pattern_string)
             return 1
-
-    def _find_matching_pattern(
-        self, pattern_string: str, target: str, action: str
-    ) -> Optional[CommandPattern]:
-        """Find the best matching conversational pattern"""
-        # Try exact match first
-        for pattern in self.conversational_patterns:
-            if pattern_string == pattern.pattern:
-                return pattern
-
-        # Try partial matches - check if all words in pattern_string are in pattern
-        for pattern in self.conversational_patterns:
-            pattern_words = pattern.pattern.split()
-            input_words = pattern_string.split()
-
-            # Check if all input words are in pattern words (more specific matching)
-            if all(word in pattern_words for word in input_words):
-                return pattern
-
-            # Also check aliases
-            if target in pattern.aliases:
-                return pattern
-
-        # Try action-based matching
-        if action:
-            for pattern in self.conversational_patterns:
-                if action in pattern.pattern.split():
-                    return pattern
-
-        return None
 
     def _execute_handler(
         self, handler_name: str, args: Namespace, pattern: CommandPattern
@@ -248,13 +171,7 @@ class BaseCommand(ABC, LoggingCommandMixin):
     def _handle_subcommand(self, args: Namespace) -> int:
         """Handle traditional subcommand structure"""
         subcommand = args.subcommand
-
-        # Find the config for this subcommand
-        config = None
-        for cfg in self.subcommand_configs:
-            if subcommand == cfg.name or subcommand in cfg.aliases:
-                config = cfg
-                break
+        config = self.pattern_matcher.find_subcommand_config(subcommand)
 
         if not config:
             print(f"❌ Unknown subcommand: {subcommand}")
@@ -273,9 +190,9 @@ class BaseCommand(ABC, LoggingCommandMixin):
         print(f"📋 {self.description}")
         print()
 
-        if self.conversational_patterns:
+        if self.pattern_matcher.has_conversational_patterns():
             print("💬 Conversational Commands:")
-            for pattern in self.conversational_patterns:
+            for pattern in self.pattern_matcher.conversational_patterns:
                 print(f"   jpapi {self.name} {pattern.pattern}")
                 if pattern.description:
                     print(f"      {pattern.description}")
@@ -283,9 +200,9 @@ class BaseCommand(ABC, LoggingCommandMixin):
                     print(f"      Aliases: {', '.join(pattern.aliases)}")
                 print()
 
-        if self.subcommand_configs:
+        if self.pattern_matcher.has_subcommands():
             print("🔧 Traditional Commands:")
-            for config in self.subcommand_configs:
+            for config in self.pattern_matcher.subcommand_configs:
                 print(f"   jpapi {self.name} {config.name}")
                 print(f"      {config.description}")
                 if config.aliases:
@@ -296,16 +213,11 @@ class BaseCommand(ABC, LoggingCommandMixin):
         """Show suggestions for unrecognized patterns"""
         print("\n💡 Did you mean:")
 
-        # Find similar patterns
-        similar_patterns = []
-        for pattern in self.conversational_patterns:
-            if any(word in pattern.pattern for word in pattern_string.split()):
-                similar_patterns.append(pattern)
-
-        for pattern in similar_patterns[:3]:  # Show top 3 suggestions
+        suggestions = self.pattern_matcher.get_suggestions(pattern_string)
+        for pattern in suggestions:
             print(f"   jpapi {self.name} {pattern.pattern}")
 
-        if not similar_patterns:
+        if not suggestions:
             print("   Try 'jpapi help' for available commands")
 
     def setup_common_args(self, parser: ArgumentParser) -> None:
@@ -364,67 +276,16 @@ class BaseCommand(ABC, LoggingCommandMixin):
             return False
         return True
 
-    def format_output(self, data: Any, format_type: str = "table") -> str:
-        """Format output data"""
-        if format_type == "json":
-            import json
-
-            return json.dumps(data, indent=2)
-        elif format_type == "csv":
-            return self._format_csv(data)
-        else:
-            return self._format_table(data)
-
-    def _format_table(self, data: Any) -> str:
-        """Format data as table"""
-        if isinstance(data, list) and data and isinstance(data[0], dict):
-            # Simple table formatting
-            headers = list(data[0].keys())
-            rows = []
-
-            # Header
-            header_row = " | ".join(f"{h:15}" for h in headers)
-            separator = "-" * len(header_row)
-            rows.append(header_row)
-            rows.append(separator)
-
-            # Data rows
-            for item in data:
-                row = " | ".join(f"{str(item.get(h, '')):15}" for h in headers)
-                rows.append(row)
-
-            return "\n".join(rows)
-        else:
-            return str(data)
-
-    def _format_csv(self, data: Any) -> str:
-        """Format data as CSV"""
-        if isinstance(data, list) and data and isinstance(data[0], dict):
-            import csv
-            import io
-
-            output = io.StringIO()
-            writer = csv.DictWriter(output, fieldnames=data[0].keys())
-            writer.writeheader()
-            writer.writerows(data)
-            return output.getvalue()
-        else:
-            return str(data)
+    # Delegate output formatting to OutputFormatter
+    def format_output(self, data, format_type: str = "table") -> str:
+        """Format output data (delegates to OutputFormatter)"""
+        return self.output_formatter.format_output(data, format_type)
 
     def save_output(self, content: str, output_path: Optional[str] = None) -> None:
-        """Save output to file or print to stdout"""
-        if output_path:
-            try:
-                # Ensure directory exists
-                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-                with open(output_path, "w") as f:
-                    f.write(content)
-                print(f"✅ Output saved to: {output_path}")
-            except Exception as e:
-                print(f"❌ Failed to save output: {e}")
-                print(content)
-        else:
-            print(content)
+        """Save output to file or print (delegates to OutputFormatter)"""
+        success, message = self.output_formatter.save_output(content, output_path)
+        if message:
+            print(message)
 
     def handle_api_error(self, error: Exception) -> int:
         """Handle API errors consistently"""
@@ -447,133 +308,39 @@ class BaseCommand(ABC, LoggingCommandMixin):
             print(f"❌ API Error: {error_msg}")
             return 1
 
-    # Production Guardrails
+    # Delegate production safety to SafetyValidator
     def is_production_environment(self) -> bool:
         """Check if current environment is production"""
-        return self.safety_manager.is_production_environment(self.environment)
+        return self.safety_validator.is_production_environment(self.environment)
 
     def require_production_confirmation(
         self,
         operation: str,
         details: str = "",
         changes_summary: str = "",
-        args: Namespace = None,
+        args: Optional[Namespace] = None,
     ) -> bool:
-        """Require explicit confirmation for production operations with comprehensive summary"""
-        if not self.is_production_environment():
-            return True
-
-        # Check for force flag
-        if args and getattr(args, "force", False):
-            print("🔒 Force flag detected - skipping production confirmation")
-            return True
-
-        print("🚨 PRODUCTION ENVIRONMENT DETECTED 🚨")
-        print("=" * 60)
-        print(f"Operation: {operation}")
-        if details:
-            print(f"Details: {details}")
-        print(f"Environment: {self.environment}")
-        print(f"Timestamp: {self._get_timestamp()}")
-        print("=" * 60)
-
-        # Show comprehensive changes summary
-        if changes_summary:
-            print("\n📋 CHANGES SUMMARY:")
-            print("-" * 40)
-            print(changes_summary)
-            print("-" * 40)
-
-        print("\n⚠️  This will modify PRODUCTION data.")
-        print("💡 Use --dry-run to test operations safely")
-        print("🔒 Use --force to skip this confirmation")
-        print()
-
-        # Enhanced confirmation
-        print("🔐 SAFETY CONFIRMATION REQUIRED")
-        print("=" * 40)
-        response = (
-            input("Do you want to proceed with this PRODUCTION operation? (y/N): ")
-            .strip()
-            .lower()
+        """Require explicit confirmation for production operations"""
+        return self.safety_validator.require_production_confirmation(
+            self.environment, operation, details, changes_summary, args
         )
-
-        if response not in ["y", "yes"]:
-            print("❌ Operation cancelled")
-            return False
-
-        # Additional confirmation for high-risk operations
-        safety_word = (
-            input("Are you absolutely sure you want to proceed? (y/N): ")
-            .strip()
-            .lower()
-        )
-        if safety_word not in ["y", "yes"]:
-            print("❌ Operation cancelled - second confirmation failed")
-            return False
-
-        print("✅ Production operation confirmed. Proceeding...")
-        return True
-
-    def _get_timestamp(self) -> str:
-        """Get current timestamp for logging"""
-        from datetime import datetime
-
-        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    def create_bulk_changes_summary(self, operation_type: str, objects: list) -> str:
-        """Create a comprehensive summary for bulk operations"""
-        summary = f"\n{operation_type} Summary:\n"
-        summary += f"  • Total Objects: {len(objects)}\n"
-
-        # Group by type
-        by_type = {}
-        for obj in objects:
-            obj_type = obj.get("type", "Unknown")
-            if obj_type not in by_type:
-                by_type[obj_type] = []
-            by_type[obj_type].append(obj)
-
-        for obj_type, items in by_type.items():
-            summary += f"\n  {obj_type.upper()} ({len(items)} items):\n"
-            for item in items[:5]:  # Show first 5 items
-                name = item.get("name", "Unknown")
-                summary += f"    • {name}\n"
-            if len(items) > 5:
-                summary += f"    • ... and {len(items) - 5} more\n"
-
-        summary += f"\n  Impact: Will {operation_type.lower()} {len(objects)} objects in PRODUCTION"
-        return summary
 
     def require_dry_run_confirmation(self, operation: str) -> bool:
         """Suggest dry-run mode for production operations"""
-        if not self.is_production_environment():
-            return True
-
-        print("🔍 DRY-RUN MODE RECOMMENDED")
-        print("=" * 40)
-        print(f"Operation: {operation}")
-        print(f"Environment: {self.environment}")
-        print()
-        print("💡 Consider using --dry-run to test first:")
-        print(f"   jpapi {self.name} --dry-run ...")
-        print()
-
-        response = (
-            input("Continue without dry-run? (type 'yes' to proceed): ").strip().lower()
+        return self.safety_validator.require_dry_run_confirmation(
+            self.environment, operation
         )
-        return response == "yes"
 
     def check_destructive_operation(
         self, operation: str, resource_name: str = ""
     ) -> bool:
         """Check if operation is destructive and requires extra confirmation"""
-        if not self.safety_manager.should_require_confirmation(
-            self.environment, operation
-        ):
-            return True
+        return self.safety_validator.check_destructive_operation(
+            self.environment, operation, resource_name
+        )
 
-        return self.require_production_confirmation(
-            f"Destructive Operation: {operation}",
-            f"Resource: {resource_name}" if resource_name else "",
+    def create_bulk_changes_summary(self, operation_type: str, objects: list) -> str:
+        """Create a comprehensive summary for bulk operations"""
+        return self.safety_validator.create_bulk_changes_summary(
+            operation_type, objects
         )

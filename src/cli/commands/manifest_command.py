@@ -28,7 +28,7 @@ try:
 except ImportError:
     # Mock ConfigManager for standalone usage
     class ConfigManager:
-        def __init__(self, environment="dev"):
+        def __init__(self, environment="sandbox"):
             self.environment = environment
 
 
@@ -41,8 +41,8 @@ def manifest():
 @manifest.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--output", "-o", help="Output directory for manifest data")
@@ -95,8 +95,8 @@ def update(env: str, output: Optional[str], types: List[str], verbose: bool):
 @manifest.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--search", "-s", required=True, help="Search term for manifests")
@@ -147,8 +147,8 @@ def search(env: str, search: str, types: List[str], output_format: str):
 @manifest.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--bundle-id", required=True, help="Bundle ID to get details for")
@@ -181,8 +181,8 @@ def details(env: str, bundle_id: str):
 @manifest.command()
 @click.option(
     "--env",
-    default="dev",
-    type=click.Choice(["dev", "prod"]),
+    default="sandbox",
+    type=click.Choice(["sandbox", "production", "staging", "test"]),
     help="Environment to use",
 )
 @click.option("--output", "-o", help="Output path for the report")

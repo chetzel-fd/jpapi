@@ -4,7 +4,7 @@ Policy Export Handler for jpapi CLI
 Handles export of JAMF policies
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from argparse import Namespace
 from .export_base import ExportBase
 import json
@@ -20,7 +20,8 @@ class ExportPolicies(ExportBase):
         super().__init__(auth, "policies")
         self.endpoint = "/api/v1/policies"
         self.detail_endpoint = "/JSSResource/policies"
-        self.environment = "dev"  # Default environment
+        self.environment = "sandbox"  # Default environment
+        self.category_cache: Dict[int, Dict[str, Any]] = {}
 
     @log_operation("Policy Data Fetch")
     def _fetch_data(self, args: Namespace) -> List[Dict[str, Any]]:
@@ -64,6 +65,50 @@ class ExportPolicies(ExportBase):
             f"Policy fetch complete: {len(all_policies)} total policies retrieved"
         )
         return all_policies
+
+    def _get_category_details(self, category_id: Optional[Any]) -> Dict[str, Any]:
+        """Get category details from API with caching"""
+        if not category_id:
+            return {}
+
+        # Convert to int if needed
+        try:
+            cat_id = int(category_id)
+        except (TypeError, ValueError):
+            return {}
+
+        # Check cache first
+        if cat_id in self.category_cache:
+            return self.category_cache[cat_id]
+
+        try:
+            endpoint = f"/JSSResource/categories/id/{cat_id}"
+            response = self.auth.api_request("GET", endpoint)
+            if "category" in response:
+                category_data = response["category"]
+                self.category_cache[cat_id] = category_data
+                return category_data
+        except Exception as e:
+            self.log_error(f"Could not fetch category {cat_id}", e)
+
+        return {}
+
+    def _extract_category_info(self, category_obj: Any) -> tuple[str, str]:
+        """Extract category name and description from category object"""
+        category_name = ""
+        category_description = ""
+
+        if isinstance(category_obj, dict):
+            category_name = category_obj.get("name", "")
+            category_id = category_obj.get("id", "")
+            if category_id:
+                cat_details = self._get_category_details(category_id)
+                if cat_details:
+                    category_description = cat_details.get("description", "")
+        else:
+            category_name = str(category_obj) if category_obj else ""
+
+        return category_name, category_description
 
     def _format_data(
         self, data: List[Dict[str, Any]], args: Namespace
@@ -136,12 +181,16 @@ class ExportPolicies(ExportBase):
                 # Extract data from detailed policy if available, otherwise use basic policy
                 if detail_policy:
                     general = detail_policy.get("general", {})
+                    # Extract category info
+                    cat_name, cat_desc = self._extract_category_info(
+                        general.get("category", {})
+                    )
                     policy_data = {
                         "delete": "",  # Empty column for manual deletion tracking
                         "ID": create_jamf_hyperlink(
                             "policies",
                             policy.get("id", ""),
-                            getattr(args, "env", "dev"),
+                            getattr(args, "env", "sandbox"),
                         ),
                         "Name": policy.get("name", ""),
                         "Description": general.get(
@@ -149,11 +198,8 @@ class ExportPolicies(ExportBase):
                         ),  # Add description field
                         "Status": status,
                         "Enabled": enabled,
-                        "Category": (
-                            general.get("category", {}).get("name", "")
-                            if isinstance(general.get("category"), dict)
-                            else general.get("category", "")
-                        ),
+                        "Category": cat_name,
+                        "Category Description": cat_desc,
                         "Frequency": general.get("frequency", ""),
                         "Trigger": general.get("trigger", ""),
                         "Event_Trigger": general.get("trigger_other", ""),
@@ -166,12 +212,16 @@ class ExportPolicies(ExportBase):
                     }
                 else:
                     # Fallback to basic policy data if detailed info not available
+                    # Extract category info
+                    cat_name, cat_desc = self._extract_category_info(
+                        policy.get("category", {})
+                    )
                     policy_data = {
                         "delete": "",  # Empty column for manual deletion tracking
                         "ID": create_jamf_hyperlink(
                             "policies",
                             policy.get("id", ""),
-                            getattr(args, "env", "dev"),
+                            getattr(args, "env", "sandbox"),
                         ),
                         "Name": policy.get("name", ""),
                         "Description": policy.get(
@@ -179,11 +229,8 @@ class ExportPolicies(ExportBase):
                         ),  # Description from basic policy
                         "Status": status,
                         "Enabled": enabled,
-                        "Category": (
-                            policy.get("category", {}).get("name", "")
-                            if isinstance(policy.get("category"), dict)
-                            else policy.get("category", "")
-                        ),
+                        "Category": cat_name,
+                        "Category Description": cat_desc,
                         "Frequency": policy.get("frequency", ""),
                         "Trigger": policy.get("trigger", ""),
                         "Event_Trigger": "",
@@ -275,7 +322,7 @@ class ExportPolicies(ExportBase):
 
             # Save policy file as JSON
             # Get the proper export directory for the environment
-            export_dir = get_export_directory(getattr(self, "environment", "dev"))
+            export_dir = get_export_directory(getattr(self, "environment", "sandbox"))
             policies_dir = export_dir / "policies"
 
             self._download_file(
@@ -296,14 +343,14 @@ class ExportPolicies(ExportBase):
     def export(self, args: Namespace) -> int:
         """Override export to handle downloaded files summary"""
         # Set environment from args
-        self.environment = getattr(args, "env", "dev")
+        self.environment = getattr(args, "env", "sandbox")
         result = super().export(args)
 
         # Show downloaded files summary if any
         if hasattr(self, "_downloaded_files") and self._downloaded_files:
             self.log_success(f"Downloaded {len(self._downloaded_files)} policy files")
             # Get the proper export directory for the environment
-            export_dir = get_export_directory(getattr(self, "environment", "dev"))
+            export_dir = get_export_directory(getattr(self, "environment", "sandbox"))
             policies_dir = export_dir / "policies"
             self.log_info(f"Files saved to: {policies_dir}")
             self.log_info("Downloaded Files:")

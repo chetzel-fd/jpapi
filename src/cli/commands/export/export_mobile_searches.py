@@ -125,7 +125,7 @@ class ExportMobileSearches(ExportBase):
     def export(self, args) -> int:
         """Main export method for mobile device searches"""
         try:
-            self.environment = getattr(args, "env", "dev")
+            self.environment = getattr(args, "env", "sandbox")
             self.log_info("Starting mobile device searches export")
 
             # Fetch data

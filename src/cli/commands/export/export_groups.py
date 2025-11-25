@@ -50,7 +50,9 @@ class ExportComputerGroups(ExportBase):
             )
 
             # Basic group data
-            group_data = self._get_basic_group_data(group, getattr(args, "env", "dev"))
+            group_data = self._get_basic_group_data(
+                group, getattr(args, "env", "sandbox")
+            )
 
             # Get detailed info for all groups to make CSV more useful
             if group.get("id"):
@@ -99,7 +101,7 @@ class ExportComputerGroups(ExportBase):
             return ""
 
     def _get_basic_group_data(
-        self, group: Dict[str, Any], environment: str = "dev"
+        self, group: Dict[str, Any], environment: str = "sandbox"
     ) -> Dict[str, Any]:
         """Get basic group information"""
         return {

@@ -16,14 +16,14 @@ class SignatureManager:
 
     def __init__(
         self,
-        user_signature: str = "chetzel",
+        user_signature: str = "admin",
         config_storage: Optional["IConfigStorage"] = None,
     ):
         """
         Initialize signature manager
 
         Args:
-            user_signature: The user signature to append (default: "chetzel")
+            user_signature: The user signature to append (default: "admin")
             config_storage: Optional configuration storage implementation
         """
         from .store_config_env import EnvConfigStorage
@@ -47,7 +47,7 @@ class SignatureManager:
             include_date: Whether to include the current date in the signature
 
         Returns:
-            Signature string in format " - chetzel YYYY.MM.DD" or " - chetzel"
+            Signature string in format " - username YYYY.MM.DD" or " - username"
         """
         signature = f" - {self.user_signature}"
 
@@ -136,7 +136,7 @@ def get_user_signature() -> str:
 
     storage = CompositeConfigStorage([EnvConfigStorage(), FileConfigStorage()])
 
-    return storage.get_config("signature") or "chetzel"
+    return storage.get_config("signature") or "admin"
 
 
 def set_user_signature(signature: str) -> None:

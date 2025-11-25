@@ -742,7 +742,7 @@ def main():
             "Select Environment",
             ["dev", "staging", "prod"],
             index=0,
-            help="Choose the JAMF Pro environment (dev=fanduelgrouptest.jamfcloud.com)",
+            help="Choose the JAMF Pro environment (configure URLs via environment variables)",
         )
 
         # Show instance prefix

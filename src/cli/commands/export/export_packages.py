@@ -20,7 +20,8 @@ class ExportPackages(ExportBase):
         super().__init__(auth, "packages")
         self.endpoint = "/api/v1/packages"
         self.detail_endpoint = "/api/v1/packages"
-        self.environment = "dev"  # Default environment
+        self.environment = "sandbox"  # Default environment
+        self.category_cache: Dict[int, Dict[str, Any]] = {}
 
     @log_operation("Package Data Fetch")
     def _fetch_data(self, args: Namespace) -> List[Dict[str, Any]]:
@@ -64,6 +65,33 @@ class ExportPackages(ExportBase):
             f"Package fetch complete: {len(all_packages)} total packages retrieved"
         )
         return all_packages
+
+    def _get_category_details(self, category_id: Optional[Any]) -> Dict[str, Any]:
+        """Get category details from API with caching"""
+        if not category_id:
+            return {}
+
+        # Convert to int if needed
+        try:
+            cat_id = int(category_id)
+        except (TypeError, ValueError):
+            return {}
+
+        # Check cache first
+        if cat_id in self.category_cache:
+            return self.category_cache[cat_id]
+
+        try:
+            endpoint = f"/JSSResource/categories/id/{cat_id}"
+            response = self.auth.api_request("GET", endpoint)
+            if "category" in response:
+                category_data = response["category"]
+                self.category_cache[cat_id] = category_data
+                return category_data
+        except Exception as e:
+            self.log_error(f"Could not fetch category {cat_id}", e)
+
+        return {}
 
     def _format_data(
         self, data: List[Dict[str, Any]], args: Namespace
@@ -122,7 +150,7 @@ class ExportPackages(ExportBase):
 
                 # Extract basic package data
                 package_data = self._extract_basic_package_data(
-                    package, detailed_package, getattr(args, "env", "dev")
+                    package, detailed_package, getattr(args, "env", "sandbox")
                 )
 
                 # Add detailed information if available
@@ -182,13 +210,28 @@ class ExportPackages(ExportBase):
         environment: str,
     ) -> Dict[str, Any]:
         """Extract basic package information"""
+        # Get category details
+        category_id = package.get("categoryId", "")
+        category_name = ""
+        category_description = ""
+
+        if category_id:
+            cat_details = self._get_category_details(category_id)
+            if cat_details:
+                category_name = cat_details.get("name", "")
+                category_description = cat_details.get("description", "")
+            else:
+                # Fallback to showing just the ID if can't fetch details
+                category_name = str(category_id)
+
         return {
             "delete": "",  # Empty column for manual deletion tracking
             "ID": create_jamf_hyperlink("packages", package.get("id", ""), environment),
             "Name": package.get("packageName", ""),  # Use packageName as the main name
             "Package Name": package.get("packageName", ""),
             "Version": package.get("version", ""),
-            "Category": package.get("categoryId", ""),  # Use categoryId
+            "Category": category_name,
+            "Category Description": category_description,
             "Filename": package.get("fileName", ""),  # Use fileName
             "Size": package.get("size", ""),
             "Size_MB": self._format_size_mb(package.get("size", 0)),
@@ -323,7 +366,7 @@ class ExportPackages(ExportBase):
             }
 
             # Get the proper export directory for the environment
-            export_dir = get_export_directory(getattr(self, "environment", "dev"))
+            export_dir = get_export_directory(getattr(self, "environment", "sandbox"))
             packages_dir = export_dir / "packages"
 
             self._download_file(
@@ -355,7 +398,7 @@ class ExportPackages(ExportBase):
             )
 
             # Get the proper export directory for the environment
-            export_dir = get_export_directory(getattr(self, "environment", "dev"))
+            export_dir = get_export_directory(getattr(self, "environment", "sandbox"))
             packages_dir = export_dir / "packages"
 
             self._download_file(

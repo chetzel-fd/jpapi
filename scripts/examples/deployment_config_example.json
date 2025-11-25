@@ -1,0 +1,130 @@
+{
+  "description": "Example deployment configuration for software installation via Jamf Pro",
+  "environment": "sandbox",
+  "extensions": [
+    {
+      "template": "chrome",
+      "extension_id": "chlnagmkonfbonegilldifigaelbfcfe",
+      "extension_url": "https://haka-public-production-extension-registry-gzgtuycmtvored.s3.us-east-2.amazonaws.com/manifest-fanduel.xml",
+      "extension_name": "AIM Security Extension"
+    },
+    {
+      "template": "firefox",
+      "extension_id": "xyz789",
+      "extension_name": "Security Extension"
+    },
+    {
+      "template": "safari",
+      "extension_id": "com.example.safari-extension",
+      "extension_name": "Safari Security Extension"
+    },
+    {
+      "template": "edge",
+      "extension_id": "abc123def456",
+      "extension_url": "https://example.com/manifest.json",
+      "extension_name": "Edge Security Extension"
+    }
+  ],
+  "apps": [
+    {
+      "app_name": "Slack",
+      "label": "slack",
+      "category": "Productivity"
+    },
+    {
+      "app_name": "Zoom",
+      "label": "zoom",
+      "category": "Communication"
+    },
+    {
+      "app_name": "Microsoft Teams",
+      "label": "microsoftteams",
+      "category": "Communication"
+    },
+    {
+      "app_name": "Google Chrome",
+      "label": "googlechrome",
+      "category": "Browsers"
+    },
+    {
+      "app_name": "Firefox",
+      "label": "firefox",
+      "category": "Browsers"
+    },
+    {
+      "app_name": "Microsoft Edge",
+      "label": "microsoftedge",
+      "category": "Browsers"
+    },
+    {
+      "app_name": "Adobe Acrobat Reader",
+      "label": "adobeacrobatreader",
+      "category": "Productivity"
+    },
+    {
+      "app_name": "Microsoft Office",
+      "label": "microsoftoffice",
+      "category": "Productivity"
+    }
+  ],
+  "pppc_profiles": [
+    {
+      "app_name": "Google Chrome",
+      "bundle_id": "com.google.Chrome",
+      "permissions": ["full_disk_access", "camera", "microphone", "photos"]
+    },
+    {
+      "app_name": "Zoom",
+      "bundle_id": "us.zoom.xos",
+      "permissions": ["camera", "microphone", "full_disk_access", "screen_recording"]
+    },
+    {
+      "app_name": "Slack",
+      "bundle_id": "com.tinyspeck.slackmacgap",
+      "permissions": ["camera", "microphone", "full_disk_access", "contacts"]
+    },
+    {
+      "app_name": "Microsoft Teams",
+      "bundle_id": "com.microsoft.teams",
+      "permissions": ["camera", "microphone", "full_disk_access", "screen_recording"]
+    },
+    {
+      "app_name": "Adobe Acrobat Reader",
+      "bundle_id": "com.adobe.Reader",
+      "permissions": ["full_disk_access", "photos"]
+    }
+  ],
+  "custom_policies": [
+    {
+      "app_name": "Custom Application",
+      "package_id": 123,
+      "script_id": 456,
+      "policy_name": "Install Custom Application",
+      "description": "Custom installation policy for internal application"
+    }
+  ],
+  "deployment_settings": {
+    "scope": {
+      "all_computers": true,
+      "computer_groups": ["All Computers"],
+      "exclusions": []
+    },
+    "distribution_method": "Install Automatically",
+    "user_removable": false,
+    "level": "System",
+    "redeploy_on_update": "Newly Assigned"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

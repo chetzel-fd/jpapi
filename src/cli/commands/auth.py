@@ -24,7 +24,7 @@ def auth():
 @auth.command()
 @click.option(
     "--env",
-    default="dev",
+    default="sandbox",
     type=click.Choice(["dev", "prod"]),
     help="Environment to configure",
 )
@@ -74,7 +74,7 @@ def setup(env: str):
 @auth.command()
 @click.option(
     "--env",
-    default="dev",
+    default="sandbox",
     type=click.Choice(["dev", "prod"]),
     help="Environment to check",
 )

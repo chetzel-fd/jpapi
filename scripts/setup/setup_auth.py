@@ -155,7 +155,7 @@ def main():
         sys.path.insert(0, str(Path(__file__).parent / "src"))
         from core.auth.login_manager import UnifiedJamfAuth
 
-        auth = UnifiedJamfAuth(environment="dev")
+        auth = UnifiedJamfAuth(environment="sandbox")
         token_result = auth.get_token()
 
         if hasattr(token_result, "success") and token_result.success:

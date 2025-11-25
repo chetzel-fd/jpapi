@@ -95,7 +95,7 @@ class RolesCommand(BaseCommand):
                 return 1
 
             # Get environment from args
-            environment = getattr(args, "env", "dev")
+            environment = getattr(args, "env", "sandbox")
 
             if args.roles_action == "create":
                 return self._handle_create_roles(args, environment)

@@ -16,10 +16,18 @@ from .common_imports import (
 )
 from core.logging.command_mixin import log_operation
 from core.auth.login_manager import UnifiedJamfAuth
+from resources.config.api_endpoints import APIRegistry
 
 
 class AdvancedSearchesCommand(BaseCommand):
     """Advanced searches command for JAMF Pro advanced search functionality"""
+
+    # Mapping from search_type to API object type
+    SEARCH_TYPE_MAP = {
+        "computer": "computer-advanced-searches",
+        "mobile": "mobile-advanced-searches",
+        "user": "user-advanced-searches",
+    }
 
     def __init__(self):
         super().__init__(
@@ -202,26 +210,19 @@ class AdvancedSearchesCommand(BaseCommand):
         try:
             self.log_info(f"Fetching {search_type} advanced searches...")
 
-            # API endpoint mapping
-            endpoints = {
-                "computer": "/JSSResource/advancedcomputersearches",
-                "mobile": "/JSSResource/advancedmobiledevicesearches",
-                "user": "/JSSResource/advancedusersearches",
-            }
-
             if search_type == "all":
-                # List all types
+                # List all types using APIRegistry
                 all_searches = []
-                for search_type_name, endpoint in endpoints.items():
-                    searches = self._fetch_searches(endpoint, search_type_name)
+                for search_type_name in ["computer", "mobile", "user"]:
+                    searches = self._fetch_searches(search_type_name)
                     all_searches.extend(searches)
                 searches = all_searches
             else:
-                endpoint = endpoints.get(search_type)
-                if not endpoint:
+                # Validate search type exists
+                if search_type not in self.SEARCH_TYPE_MAP:
                     print(f"❌ Unknown search type: {search_type}")
                     return 1
-                searches = self._fetch_searches(endpoint, search_type)
+                searches = self._fetch_searches(search_type)
 
             if not searches:
                 print(f"❌ No {search_type} searches found")
@@ -241,26 +242,32 @@ class AdvancedSearchesCommand(BaseCommand):
         except Exception as e:
             return self.handle_api_error(e)
 
-    def _fetch_searches(self, endpoint: str, search_type: str) -> List[Dict[str, Any]]:
-        """Fetch searches from API endpoint"""
+    def _fetch_searches(self, search_type: str) -> List[Dict[str, Any]]:
+        """Fetch searches from API using APIRegistry"""
         print(f"🔍 Fetching {search_type} searches...")
+
+        # Map to API object type
+        object_type = self.SEARCH_TYPE_MAP[search_type]
+
+        # Get endpoint from APIRegistry
+        endpoint = APIRegistry.get_list_endpoint(object_type)
         response = self.auth.api_request("GET", endpoint)
 
-        # Extract searches from response based on type
-        if search_type == "computer":
-            if "advanced_computer_searches" in response:
-                searches = response["advanced_computer_searches"]
-                return searches if isinstance(searches, list) else [searches]
+        # Extract searches using APIRegistry
+        searches = APIRegistry.extract_list_response(object_type, response)
+        if searches:
+            return searches
 
-        elif search_type == "mobile":
-            if "advanced_mobile_device_searches" in response:
-                searches = response["advanced_mobile_device_searches"]
-                return searches if isinstance(searches, list) else [searches]
-
-        elif search_type == "user":
-            if "advanced_user_searches" in response:
-                searches = response["advanced_user_searches"]
-                return searches if isinstance(searches, list) else [searches]
+        # Fallback for backward compatibility
+        if search_type == "computer" and "advanced_computer_searches" in response:
+            searches = response["advanced_computer_searches"]
+            return searches if isinstance(searches, list) else [searches]
+        elif search_type == "mobile" and "advanced_mobile_device_searches" in response:
+            searches = response["advanced_mobile_device_searches"]
+            return searches if isinstance(searches, list) else [searches]
+        elif search_type == "user" and "advanced_user_searches" in response:
+            searches = response["advanced_user_searches"]
+            return searches if isinstance(searches, list) else [searches]
 
         return []
 
@@ -425,17 +432,19 @@ class AdvancedSearchesCommand(BaseCommand):
                 "display_fields": getattr(args, "display_fields", []),
             }
 
-            # Determine endpoint based on search type
-            endpoints = {
-                "computer": "/JSSResource/advancedcomputersearches/id/0",
-                "mobile": "/api/v1/advanced-mobile-device-searches",
-                "user": "/JSSResource/advancedusersearches/id/0",
-            }
-
-            endpoint = endpoints.get(search_type)
-            if not endpoint:
+            # Get endpoint using APIRegistry
+            if search_type not in self.SEARCH_TYPE_MAP:
                 self.log_error(f"Unknown search type: {search_type}")
                 return 1
+
+            object_type = self.SEARCH_TYPE_MAP[search_type]
+            base_endpoint = APIRegistry.get_list_endpoint(object_type)
+
+            # For classic API, creation uses /id/0, for v1 API use base
+            if base_endpoint.startswith("/api/v1/"):
+                endpoint = base_endpoint
+            else:
+                endpoint = f"{base_endpoint}/id/0"
 
             # Create the search
             response = self.auth.api_request("POST", endpoint, data=search_data)
@@ -460,17 +469,13 @@ class AdvancedSearchesCommand(BaseCommand):
 
             self.log_info(f"Updating {search_type} advanced search {search_id}...")
 
-            # Get existing search first
-            endpoints = {
-                "computer": f"/JSSResource/advancedcomputersearches/id/{search_id}",
-                "mobile": f"/api/v1/advanced-mobile-device-searches/{search_id}",
-                "user": f"/JSSResource/advancedusersearches/id/{search_id}",
-            }
-
-            endpoint = endpoints.get(search_type)
-            if not endpoint:
+            # Get endpoint using APIRegistry
+            if search_type not in self.SEARCH_TYPE_MAP:
                 self.log_error(f"Unknown search type: {search_type}")
                 return 1
+
+            object_type = self.SEARCH_TYPE_MAP[search_type]
+            endpoint = APIRegistry.get_single_endpoint(object_type, search_id)
 
             # Get existing search
             existing_search = self.auth.api_request("GET", endpoint)
@@ -511,17 +516,13 @@ class AdvancedSearchesCommand(BaseCommand):
 
             self.log_info(f"Deleting {search_type} advanced search {search_id}...")
 
-            # Determine endpoint based on search type
-            endpoints = {
-                "computer": f"/JSSResource/advancedcomputersearches/id/{search_id}",
-                "mobile": f"/api/v1/advanced-mobile-device-searches/{search_id}",
-                "user": f"/JSSResource/advancedusersearches/id/{search_id}",
-            }
-
-            endpoint = endpoints.get(search_type)
-            if not endpoint:
+            # Get endpoint using APIRegistry
+            if search_type not in self.SEARCH_TYPE_MAP:
                 self.log_error(f"Unknown search type: {search_type}")
                 return 1
+
+            object_type = self.SEARCH_TYPE_MAP[search_type]
+            endpoint = APIRegistry.get_single_endpoint(object_type, search_id)
 
             # Delete the search
             self.auth.api_request("DELETE", endpoint)
@@ -771,13 +772,15 @@ class AdvancedSearchesCommand(BaseCommand):
             return 1
 
     def _get_endpoint_for_type(self, search_type: str) -> Optional[str]:
-        """Get API endpoint for search type"""
-        endpoints = {
-            "computer": "/JSSResource/advancedcomputersearches",
-            "mobile": "/JSSResource/advancedmobiledevicesearches",
-            "user": "/JSSResource/advancedusersearches",
-        }
-        return endpoints.get(search_type)
+        """Get API endpoint for search type using APIRegistry"""
+        if search_type not in self.SEARCH_TYPE_MAP:
+            return None
+
+        object_type = self.SEARCH_TYPE_MAP[search_type]
+        try:
+            return APIRegistry.get_list_endpoint(object_type)
+        except ValueError:
+            return None
 
     def _get_search_type_by_id(
         self, search_id: str, auth: UnifiedJamfAuth

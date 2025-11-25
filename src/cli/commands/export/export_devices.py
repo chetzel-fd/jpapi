@@ -66,7 +66,7 @@ class ExportDevices(ExportBase):
 
             # Basic device data
             device_data = self._get_basic_device_data(
-                device, getattr(args, "env", "dev")
+                device, getattr(args, "env", "sandbox")
             )
 
             # Add detailed info if requested
@@ -117,7 +117,7 @@ class ExportDevices(ExportBase):
             return ""
 
     def _get_basic_device_data(
-        self, device: Dict[str, Any], environment: str = "dev"
+        self, device: Dict[str, Any], environment: str = "sandbox"
     ) -> Dict[str, Any]:
         """Get basic device information"""
         device_type_for_url = (

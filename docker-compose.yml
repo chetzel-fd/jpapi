@@ -9,7 +9,7 @@ version: "3.8"
 services:
   jpapi:
     build: .
-    image: fanduel/jpapi:latest
+    image: jpapi/jpapi:latest
     container_name: jpapi
     volumes:
       # Mount config directory for persistence
@@ -27,7 +27,7 @@ services:
   # Optional: Web UI service
   jpapi-ui:
     build: .
-    image: fanduel/jpapi:latest
+    image: jpapi/jpapi:latest
     container_name: jpapi-ui
     ports:
       - "8501:8501"

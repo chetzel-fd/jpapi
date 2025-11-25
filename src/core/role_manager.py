@@ -706,7 +706,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="JAMF Pro Role Manager for jpapi CLI")
-    parser.add_argument("--env", default="dev", help="Environment (dev/prod)")
+    parser.add_argument(
+        "--env", default="sandbox", help="Environment (sandbox/production)"
+    )
     parser.add_argument("--create", action="store_true", help="Create all roles")
     parser.add_argument("--list", action="store_true", help="List existing roles")
     parser.add_argument("--info", action="store_true", help="Show role information")

@@ -1,15 +1,15 @@
 # =============================================================================
 # JPAPI Docker Image
 # =============================================================================
-# Usage: docker run -it --rm fanduel/jpapi:latest
+# Usage: docker run -it --rm jpapi/jpapi:latest
 # =============================================================================
 
 FROM python:3.11-slim
 
 # Set metadata
-LABEL maintainer="FanDuel <dev@fanduel.com>"
+LABEL maintainer="JPAPI Team"
 LABEL description="JAMF Pro API Toolkit"
-LABEL version="1.1.0"
+LABEL version="2.0.0"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

@@ -14,7 +14,10 @@ from .common_imports import (
     BaseCommand,
 )
 from core.logging.command_mixin import log_operation
-import time
+from lib.utils import create_filter
+from cli.base.validators import InputValidators
+from cli.base.error_handler import APIErrorHandler, ErrorContext
+from resources.config.api_endpoints import APIRegistry
 
 
 class ListCommand(BaseCommand):
@@ -23,7 +26,7 @@ class ListCommand(BaseCommand):
     def __init__(self):
         super().__init__(
             name="list",
-            description="📋 List JAMF objects (policies, devices, groups, etc.)",
+            description="📋 List JAMF objects (policies, devices, etc.)",
         )
         self._setup_patterns()
 
@@ -43,6 +46,20 @@ class ListCommand(BaseCommand):
             handler="_list_profiles",
             description="List configuration profiles",
             aliases=["profile", "configs", "config"],
+        )
+
+        self.add_conversational_pattern(
+            pattern="macos profiles",
+            handler="_list_macos_profiles",
+            description="List macOS configuration profiles",
+            aliases=["mac-profiles", "osx-profiles"],
+        )
+
+        self.add_conversational_pattern(
+            pattern="ios profiles",
+            handler="_list_ios_profiles",
+            description="List iOS configuration profiles",
+            aliases=["mobile-profiles", "iphone-profiles", "ipad-profiles"],
         )
 
         self.add_conversational_pattern(
@@ -71,6 +88,13 @@ class ListCommand(BaseCommand):
             handler="_list_ios_devices",
             description="List iOS/mobile devices",
             aliases=["mobile", "ipad", "iphone", "devices"],
+        )
+
+        self.add_conversational_pattern(
+            pattern="packages",
+            handler="_list_packages",
+            description="List packages",
+            aliases=["pkg", "pkgs", "installers", "package"],
         )
 
         # User groups patterns
@@ -127,6 +151,33 @@ class ListCommand(BaseCommand):
 
         # No subcommands - use pure conversational patterns
 
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        """Add command-specific arguments including export features"""
+        super().add_arguments(parser)
+
+        # Add export-specific arguments
+        parser.add_argument(
+            "--download",
+            action="store_true",
+            help="Download individual files (for policies, scripts, etc.)",
+        )
+        parser.add_argument(
+            "--no-download",
+            action="store_true",
+            help="Skip downloading individual files",
+        )
+        parser.add_argument(
+            "--export-mode",
+            action="store_true",
+            help="Export mode: save to file with instance prefix",
+        )
+        parser.add_argument(
+            "--analysis",
+            "-a",
+            action="store_true",
+            help="Generate analysis report with insights",
+        )
+
     # Handler methods - much simpler now!
     def _list_categories(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List categories with filtering"""
@@ -136,14 +187,54 @@ class ListCommand(BaseCommand):
         """List configuration profiles with filtering"""
         return self._list_objects("profiles", args)
 
+    def _list_macos_profiles(
+        self, args: Namespace, pattern: Optional[Any] = None
+    ) -> int:
+        """List macOS profiles using ProfileExportHandler"""
+        # Check if using specialized handler
+        if hasattr(args, "download") and args.download:
+            try:
+                from .export.export_profiles import ExportProfiles
+
+                handler = ExportProfiles(self.auth, "macos")
+                return handler.export(args)
+            except Exception as e:
+                self.log_error(f"Error listing macOS profiles: {e}")
+                return 1
+        return self._list_objects("macos-profiles", args)
+
+    def _list_ios_profiles(self, args: Namespace, pattern: Optional[Any] = None) -> int:
+        """List iOS profiles"""
+        return self._list_objects("ios-profiles", args)
+
     def _list_scripts(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List scripts with filtering"""
+        # Check if using specialized handler for download
+        if hasattr(args, "download") and args.download:
+            try:
+                from .export.export_scripts import ExportScripts
+
+                handler = ExportScripts(self.auth)
+                return handler.export(args)
+            except Exception as e:
+                self.log_error(f"Error listing scripts: {e}")
+                return 1
         return self._list_objects("scripts", args)
 
     def _list_macos_policies(
         self, args: Namespace, pattern: Optional[Any] = None
     ) -> int:
         """List macOS policies with filtering"""
+        # Use specialized handler for policies to get pagination support
+        if hasattr(args, "download") and args.download:
+            try:
+                from .export.export_policies import ExportPolicies
+
+                handler = ExportPolicies(self.auth)
+                return handler.export(args)
+            except Exception as e:
+                self.log_error(f"Error listing policies: {e}")
+                return 1
         return self._list_objects("macos-policies", args)
 
     def _list_macos_devices(
@@ -155,6 +246,20 @@ class ListCommand(BaseCommand):
     def _list_ios_devices(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List iOS devices with filtering"""
         return self._list_objects("ios-devices", args)
+
+    def _list_packages(self, args: Namespace, pattern: Optional[Any] = None) -> int:
+        """List packages"""
+        # Use specialized handler for packages
+        if hasattr(args, "download") and args.download:
+            try:
+                from .export.export_packages import ExportPackages
+
+                handler = ExportPackages(self.auth)
+                return handler.export(args)
+            except Exception as e:
+                self.log_error(f"Error listing packages: {e}")
+                return 1
+        return self._list_objects("packages", args)
 
     def _list_user_groups(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List all user groups with filtering"""
@@ -198,48 +303,46 @@ class ListCommand(BaseCommand):
 
     @log_operation("List Objects")
     def _list_objects(self, object_type: str, args: Namespace) -> int:
-        """Generic method to list objects with filtering"""
+        """Generic method to list objects OR get single object by ID"""
         try:
-            # API endpoint mapping
-            endpoints = {
-                "categories": "/JSSResource/categories",
-                "profiles": "/JSSResource/osxconfigurationprofiles",
-                "scripts": "/JSSResource/scripts",
-                "macos-policies": "/api/v1/policies",
-                "macos-devices": "/JSSResource/computers",
-                "ios-devices": "/JSSResource/mobiledevices",
-                "computer-groups": "/JSSResource/computergroups",
-                "computer-advanced-searches": "/JSSResource/advancedcomputersearches",
-                "mobile-advanced-searches": "/api/v1/advanced-mobile-device-searches",
-                "user-advanced-searches": "/JSSResource/advancedusersearches",
-            }
+            # Detect if user wants specific ID
+            obj_id = self._extract_id_from_args(args)
 
-            endpoint = endpoints.get(object_type)
-            if not endpoint:
-                self.log_error(f"Unknown object type: {object_type}")
+            # Get endpoint from centralized registry
+            try:
+                if obj_id:
+                    api_endpoint = APIRegistry.get_single_endpoint(object_type, obj_id)
+                    self.log_info(f"Fetching {object_type} ID {obj_id}")
+                else:
+                    api_endpoint = APIRegistry.get_list_endpoint(object_type)
+                    self.log_info(f"Starting {object_type} listing")
+            except ValueError as e:
+                self.log_error(str(e))
                 return 1
-
-            self.log_info(f"Starting {object_type} listing")
 
             # Make API call
             self.log_info(f"Fetching {object_type} from JAMF API")
-            response = self.auth.api_request("GET", endpoint)
+            response = self.auth.api_request("GET", api_endpoint)
 
-            # Extract objects from response
+            # Extract objects (handles both single and list)
             self.log_info("Processing API response")
-            objects = self._extract_objects_from_response(response, object_type)
+            objects = self._extract_objects_from_response(
+                response, object_type, is_single=obj_id is not None
+            )
 
             if not objects:
                 self.log_error(f"No {object_type} found")
                 return 1
 
-            self.log_success(f"Found {len(objects)} {object_type}")
-
-            # Apply filtering
-            if hasattr(args, "filter") and args.filter:
-                self.log_info("Applying filters")
-                objects = self._apply_filters(objects, args, object_type)
-                self.log_info(f"After filtering: {len(objects)} {object_type}")
+            # Apply filtering only for lists
+            if not obj_id:
+                self.log_success(f"Found {len(objects)} {object_type}")
+                if hasattr(args, "filter") and args.filter:
+                    self.log_info("Applying filters")
+                    objects = self._apply_filters(objects, args, object_type)
+                    self.log_info(f"After filtering: {len(objects)} {object_type}")
+            else:
+                self.log_success(f"Retrieved {object_type} ID {obj_id}")
 
             # Format and output
             self.log_info("Formatting data for display")
@@ -248,8 +351,34 @@ class ListCommand(BaseCommand):
             )
 
             self.log_info("Generating output")
-            output = self.format_output(formatted_data, args.format)
-            self.save_output(output, args.output)
+
+            # Determine output format (default to CSV for export mode)
+            output_format = args.format
+            is_export_mode = getattr(args, "export_mode", False)
+            if is_export_mode and output_format == "table":
+                output_format = "csv"
+
+            output = self.format_output(formatted_data, output_format)
+
+            # Handle export mode - save to file with instance prefix
+            if getattr(args, "export_mode", False) and args.output is None:
+                from lib.exports.manage_exports import (
+                    generate_export_filename,
+                    get_export_directory,
+                )
+
+                filename = generate_export_filename(
+                    object_type, output_format, self.environment
+                )
+                export_dir = get_export_directory(self.environment)
+                export_dir.mkdir(parents=True, exist_ok=True)
+                output_path = export_dir / filename
+                self.save_output(output, str(output_path))
+                self.log_success(
+                    f"Exported {len(objects)} {object_type} to {output_path}"
+                )
+            else:
+                self.save_output(output, args.output)
 
             return 0
 
@@ -257,14 +386,25 @@ class ListCommand(BaseCommand):
             return self.handle_api_error(e)
 
     def _extract_objects_from_response(
-        self, response: Dict[str, Any], object_type: str
+        self,
+        response: Dict[str, Any],
+        object_type: str,
+        is_single: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Extract objects from API response based on object type"""
-        if object_type == "categories":
-            if "categories" in response and "category" in response["categories"]:
-                return response["categories"]["category"]
+        """Extract objects from API response (handles both single/lists)"""
 
-        elif object_type == "profiles":
+        # Single object extraction using APIRegistry
+        if is_single:
+            obj = APIRegistry.extract_single_response(object_type, response)
+            return [obj] if obj else []
+
+        # Existing list extraction logic
+        if object_type == "categories":
+            if "categories" in response:
+                if "category" in response["categories"]:
+                    return response["categories"]["category"]
+
+        elif object_type in ["profiles", "macos-profiles"]:
             if "os_x_configuration_profiles" in response:
                 profiles_data = response["os_x_configuration_profiles"]
 
@@ -274,6 +414,20 @@ class ListCommand(BaseCommand):
                 elif isinstance(profiles_data, dict):
                     profiles = profiles_data.get("os_x_configuration_profile", [])
                     return profiles if isinstance(profiles, list) else [profiles]
+
+        elif object_type == "ios-profiles":
+            if "mobile_device_configuration_profiles" in response:
+                profiles_data = response["mobile_device_configuration_profiles"]
+                if isinstance(profiles_data, dict):
+                    profiles = profiles_data.get(
+                        "mobile_device_configuration_profile", []
+                    )
+                    return profiles if isinstance(profiles, list) else [profiles]
+                return (
+                    profiles_data
+                    if isinstance(profiles_data, list)
+                    else [profiles_data]
+                )
 
         elif object_type == "scripts":
             if "scripts" in response:
@@ -287,33 +441,38 @@ class ListCommand(BaseCommand):
                 return response["results"]
 
         elif object_type == "macos-devices":
-            if "computers" in response and "computer" in response["computers"]:
-                computers = response["computers"]["computer"]
-                return computers if isinstance(computers, list) else [computers]
+            if "computers" in response:
+                if "computer" in response["computers"]:
+                    computers = response["computers"]["computer"]
+                    return computers if isinstance(computers, list) else [computers]
 
         elif object_type == "ios-devices":
-            if (
-                "mobile_devices" in response
-                and "mobile_device" in response["mobile_devices"]
-            ):
-                devices = response["mobile_devices"]["mobile_device"]
-                return devices if isinstance(devices, list) else [devices]
+            if "mobile_devices" in response:
+                if "mobile_device" in response["mobile_devices"]:
+                    devices = response["mobile_devices"]["mobile_device"]
+                    return devices if isinstance(devices, list) else [devices]
+
+        elif object_type == "packages":
+            if "packages" in response:
+                packages = response["packages"]
+                if isinstance(packages, dict) and "package" in packages:
+                    packages = packages["package"]
+                return packages if isinstance(packages, list) else [packages]
 
         elif object_type == "computer-groups":
             if "computer_groups" in response:
                 groups = response["computer_groups"]
-                if isinstance(groups, dict) and "computer_group" in groups:
-                    groups = groups["computer_group"]
+                if isinstance(groups, dict):
+                    if "computer_group" in groups:
+                        groups = groups["computer_group"]
                 return groups if isinstance(groups, list) else [groups]
 
         elif object_type == "computer-advanced-searches":
             if "advanced_computer_searches" in response:
                 searches = response["advanced_computer_searches"]
-                if (
-                    isinstance(searches, dict)
-                    and "advanced_computer_search" in searches
-                ):
-                    searches = searches["advanced_computer_search"]
+                if isinstance(searches, dict):
+                    if "advanced_computer_search" in searches:
+                        searches = searches["advanced_computer_search"]
                 return searches if isinstance(searches, list) else [searches]
 
         elif object_type == "mobile-advanced-searches":
@@ -323,8 +482,9 @@ class ListCommand(BaseCommand):
         elif object_type == "user-advanced-searches":
             if "advanced_user_searches" in response:
                 searches = response["advanced_user_searches"]
-                if isinstance(searches, dict) and "advanced_user_search" in searches:
-                    searches = searches["advanced_user_search"]
+                if isinstance(searches, dict):
+                    if "advanced_user_search" in searches:
+                        searches = searches["advanced_user_search"]
                 return searches if isinstance(searches, list) else [searches]
 
         return []
@@ -337,12 +497,13 @@ class ListCommand(BaseCommand):
 
         # Name filtering
         if hasattr(args, "filter") and args.filter:
-            from lib.utils import create_filter
-
             filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             original_count = len(filtered)
             filtered = filter_obj.filter_objects(filtered, "name", args.filter)
-            print(f"🔍 Filtered from {original_count} to {len(filtered)} {object_type}")
+            print(
+                f"🔍 Filtered from {original_count} to "
+                f"{len(filtered)} {object_type}"
+            )
 
         # Status filtering for policies
         if (
@@ -388,7 +549,10 @@ class ListCommand(BaseCommand):
 
         formatted = []
         for obj in objects:
-            formatted_obj = {"ID": obj.get("id", ""), "Name": obj.get("name", "")}
+            formatted_obj = {
+                "ID": obj.get("id", ""),
+                "Name": obj.get("name", ""),
+            }
 
             # Add type-specific fields
             if "category" in obj:
@@ -421,9 +585,8 @@ class ListCommand(BaseCommand):
                     formatted_obj["UUID"] = obj.get("uuid", "")
 
                 if "payloads" in obj:
-                    formatted_obj["Payloads"] = (
-                        len(obj.get("payloads", [])) if obj.get("payloads") else 0
-                    )
+                    payloads = obj.get("payloads", [])
+                    formatted_obj["Payloads"] = len(payloads) if payloads else 0
 
                 if "frequency" in obj:
                     formatted_obj["Frequency"] = obj.get("frequency", "")
@@ -461,11 +624,11 @@ class ListCommand(BaseCommand):
                     all_groups.extend(groups)
                 groups = all_groups
             else:
-                endpoint = endpoints.get(group_type)
-                if not endpoint:
+                target_endpoint = endpoints.get(group_type)
+                if not target_endpoint:
                     self.log_error(f"Unknown group type: {group_type}")
                     return 1
-                groups = self._fetch_user_groups(endpoint, group_type)
+                groups = self._fetch_user_groups(target_endpoint, group_type)
 
             if not groups:
                 self.log_warning(f"No {group_type} user groups found")
@@ -495,14 +658,16 @@ class ListCommand(BaseCommand):
             if group_type == "smart":
                 if "smart_user_groups" in response:
                     groups = response["smart_user_groups"]
-                    if isinstance(groups, dict) and "smart_user_group" in groups:
-                        groups = groups["smart_user_group"]
+                    if isinstance(groups, dict):
+                        if "smart_user_group" in groups:
+                            groups = groups["smart_user_group"]
                     return groups if isinstance(groups, list) else [groups]
             elif group_type == "static":
                 if "static_user_groups" in response:
                     groups = response["static_user_groups"]
-                    if isinstance(groups, dict) and "static_user_group" in groups:
-                        groups = groups["static_user_group"]
+                    if isinstance(groups, dict):
+                        if "static_user_group" in groups:
+                            groups = groups["static_user_group"]
                     return groups if isinstance(groups, list) else [groups]
 
             return []
@@ -518,9 +683,7 @@ class ListCommand(BaseCommand):
 
         # Apply name filter
         if hasattr(args, "filter") and args.filter:
-            filter_obj = create_filter(
-                args.filter, getattr(args, "filter_type", "wildcard")
-            )
+            filter_obj = create_filter(getattr(args, "filter_type", "wildcard"))
             filtered = [
                 g
                 for g in filtered
@@ -579,3 +742,21 @@ class ListCommand(BaseCommand):
             formatted.append(formatted_group)
 
         return formatted
+
+    def _extract_id_from_args(self, args: Namespace) -> Optional[int]:
+        """Extract numeric ID from args with security validation"""
+        # Check action field (jpapi list scripts 50)
+        if hasattr(args, "action") and args.action:
+            if str(args.action).isdigit():
+                obj_id = int(args.action)
+                if 0 < obj_id < 999999:  # Security: reasonable range
+                    return obj_id
+
+        # Check first term (jpapi list "macos policies" 270)
+        if hasattr(args, "terms") and args.terms and len(args.terms) > 0:
+            if str(args.terms[0]).isdigit():
+                obj_id = int(args.terms[0])
+                if 0 < obj_id < 999999:
+                    return obj_id
+
+        return None

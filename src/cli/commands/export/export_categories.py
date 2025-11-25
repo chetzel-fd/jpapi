@@ -48,7 +48,9 @@ class ExportCategories(ExportBase):
             category_data = {
                 "delete": "",  # Empty column for manual deletion tracking
                 "ID": create_jamf_hyperlink(
-                    "categories", category.get("id", ""), getattr(args, "env", "dev")
+                    "categories",
+                    category.get("id", ""),
+                    getattr(args, "env", "sandbox"),
                 ),
                 "Name": category.get("name", ""),
                 "Priority": category.get("priority", ""),

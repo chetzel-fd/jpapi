@@ -25,7 +25,14 @@ from cli.commands import (
     InstallomatorCommand,
     PPPCCommand,
     ManifestCommand,
+    CertificateCommand,
+    CrowdStrikeCommand,
 )
+from cli.commands.installomator_add_app_command import InstallomatorAddAppCommand
+from cli.commands.installomator_create_policy_command import (
+    InstallomatorCreatePolicyCommand,
+)
+from cli.commands.installomator_profiles_command import InstallomatorProfilesCommand
 from cli.commands.setup_command import SetupCommand
 from cli.commands.backup_command import BackupCommand
 from cli.commands.advanced_searches_command import AdvancedSearchesCommand
@@ -36,6 +43,7 @@ from cli.commands.delete_command import DeleteCommand
 from cli.commands.profiles_scoped_command import ProfilesScopedCommand
 from cli.commands.safety_command import SafetyCommand
 from cli.commands.roles_command import RolesCommand
+from cli.commands.software_installation_command import SoftwareInstallationCommand
 
 
 class JPAPIDevCLI:
@@ -49,11 +57,13 @@ class JPAPIDevCLI:
 
     def _register_commands(self):
         """Register all available commands"""
-        # Register list command with aliases
-        registry.register(ListCommand, aliases=["ls", "show"])
+        # Register list command with aliases (including export)
+        # Note: 'export' alias automatically enables export mode
+        registry.register(ListCommand, aliases=["ls", "show", "export", "exp", "dump"])
 
-        # Register export command with aliases
-        registry.register(ExportCommand, aliases=["exp", "export-data", "dump"])
+        # DEPRECATED: Export command kept for backward compatibility only
+        # Will be removed in future version - use 'list' instead
+        registry.register(ExportCommand, aliases=["export-data", "export-cmd"])
 
         # Register search command with aliases
         registry.register(SearchCommand, aliases=["find", "query"])
@@ -100,6 +110,12 @@ class JPAPIDevCLI:
         # Register roles command with aliases
         registry.register(RolesCommand, aliases=["role", "permissions", "access"])
 
+        # Register software installation command with aliases
+        registry.register(
+            SoftwareInstallationCommand, 
+            aliases=["software-install", "install-software", "software", "install"]
+        )
+
         # Register new Phase 1 commands
         registry.register(
             AdvancedSearchesCommand, aliases=["advanced-search", "searches"]
@@ -120,6 +136,23 @@ class JPAPIDevCLI:
             InstallomatorCommand, aliases=["installomator", "installer", "apps"]
         )
 
+        # Register Installomator add app command
+        registry.register(
+            InstallomatorAddAppCommand, aliases=["add-app", "installomator-add"]
+        )
+
+        # Register Installomator create policy command
+        registry.register(
+            InstallomatorCreatePolicyCommand,
+            aliases=["create-policy", "installomator-create"],
+        )
+
+        # Register Installomator profiles command
+        registry.register(
+            InstallomatorProfilesCommand,
+            aliases=["profiles", "installomator-profiles"],
+        )
+
         # Register PPPC command with aliases
         registry.register(
             PPPCCommand, aliases=["pppc", "privacy", "tcc", "pppc-scanner"]
@@ -128,6 +161,16 @@ class JPAPIDevCLI:
         # Register Manifest command with aliases
         registry.register(
             ManifestCommand, aliases=["manifest", "manifests", "profiles-manifest"]
+        )
+
+        # Register Certificate command with aliases
+        registry.register(
+            CertificateCommand, aliases=["cert", "certs", "certificate", "csr"]
+        )
+
+        # Register CrowdStrike command with aliases
+        registry.register(
+            CrowdStrikeCommand, aliases=["crowdstrike", "falcon", "cs", "security"]
         )
 
         # Register setup command with aliases
@@ -143,7 +186,9 @@ class JPAPIDevCLI:
 
         # Global arguments
         parser.add_argument(
-            "--env", default="dev", help="JAMF environment (dev, prod, etc.)"
+            "--env",
+            default="sandbox",
+            help="JAMF environment (sandbox, production, etc.)",
         )
         parser.add_argument(
             "--experimental", action="store_true", help="Enable experimental features"

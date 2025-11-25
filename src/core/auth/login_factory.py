@@ -27,17 +27,19 @@ from pathlib import Path
 
 from .login_types import AuthInterface, AuthStatus
 from .login_manager import UnifiedJamfAuth
+from .jamf_auth import JamfAuth
 
 
 class AuthFactory:
     """Factory for creating authentication implementations"""
 
     _implementations: Dict[str, Type[AuthInterface]] = {
-        "unified": UnifiedJamfAuth,
-        "keychain": UnifiedJamfAuth,  # Alias for backward compatibility
-        "production": UnifiedJamfAuth,  # Alias for backward compatibility
-        "simple": UnifiedJamfAuth,  # Alias for backward compatibility
-        "default": UnifiedJamfAuth,  # Default implementation
+        "jamf": JamfAuth,  # New refactored implementation
+        "unified": UnifiedJamfAuth,  # Legacy implementation
+        "keychain": JamfAuth,  # Use refactored version for keychain
+        "production": JamfAuth,  # Use refactored version for production
+        "simple": UnifiedJamfAuth,  # Keep legacy for simple
+        "default": JamfAuth,  # Use refactored version as default
     }
 
     @classmethod
@@ -69,7 +71,7 @@ class AuthFactory:
     @classmethod
     def get_best_auth(cls, environment: str = "dev") -> AuthInterface:
         """
-        Get the best available authentication implementation for the current system
+        Get the best available authentication implementation
 
         Args:
             environment: Environment name
@@ -77,7 +79,15 @@ class AuthFactory:
         Returns:
             AuthInterface: Best available auth implementation
         """
-        # Try keychain first (macOS)
+        # Use refactored JamfAuth as default - it's cleaner and SRP-compliant
+        try:
+            auth = cls.create_auth("jamf", environment)
+            if auth.is_configured():
+                return auth
+        except Exception:
+            pass
+
+        # Try keychain auth (uses JamfAuth)
         if sys.platform == "darwin":
             try:
                 auth = cls.create_auth("keychain", environment)
@@ -86,16 +96,16 @@ class AuthFactory:
             except Exception:
                 pass
 
-        # Try production auth
+        # Fall back to legacy UnifiedJamfAuth if needed
         try:
-            auth = cls.create_auth("production", environment)
+            auth = cls.create_auth("unified", environment)
             if auth.is_configured():
                 return auth
         except Exception:
             pass
 
-        # Fall back to simple auth
-        return cls.create_auth("simple", environment)
+        # Return default (JamfAuth) even if not configured
+        return cls.create_auth("default", environment)
 
     @classmethod
     def register_implementation(cls, name: str, implementation: Type[AuthInterface]):

@@ -1,0 +1,71 @@
+{
+  "policy": {
+    "general": {
+      "name": "Install APP_NAME - Latest Version",
+      "enabled": true,
+      "trigger": "EVENT",
+      "frequency": "Ongoing",
+      "retry_attempts": 3,
+      "notify_on_each_failed_retry": true,
+      "category": {
+        "name": "Software Installation"
+      },
+      "description": "Installomator policy for APP_NAME installation"
+    },
+    "scope": {
+      "all_computers": true,
+      "all_jss_users": false,
+      "computer_groups": [],
+      "exclusions": {
+        "computer_groups": []
+      }
+    },
+    "scripts": [
+      {
+        "id": 196,
+        "priority": "Before",
+        "parameter4": "INSTALLOMATOR_LABEL",
+        "parameter5": "APP_NAME"
+      }
+    ],
+    "packages": [],
+    "maintenance": {
+      "recon": false,
+      "reset_catalog": false,
+      "install_cached_packages": false,
+      "cache_packages": false,
+      "fix_permissions": false,
+      "reboot": false
+    },
+    "files_processes": {
+      "delete_files": false,
+      "delete_processes": false,
+      "update_ldap": false,
+      "search_by_path": "",
+      "delete_file": false,
+      "locate_file": "",
+      "run_command": ""
+    },
+    "user_interaction": {
+      "message_start": "",
+      "message_finish": "",
+      "allow_user_to_defer": false,
+      "allow_deferral_until_utc": "",
+      "allow_deferral_for": 0,
+      "maximum_deferral": 0
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

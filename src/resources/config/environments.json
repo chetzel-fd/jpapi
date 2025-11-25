@@ -1,14 +1,15 @@
 {
-    "default": "dev",
+    "default": "sandbox",
     "available": [
-        "dev",
+        "sandbox",
         "staging",
-        "prod",
+        "production",
         "test"
     ],
     "aliases": {
-        "development": "dev",
-        "production": "prod",
+        "dev": "sandbox",
+        "development": "sandbox",
+        "prod": "production",
         "testing": "test"
     }
 }

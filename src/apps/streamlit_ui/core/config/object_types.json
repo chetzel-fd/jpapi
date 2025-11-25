@@ -6,8 +6,10 @@
             "description": "Advanced computer and mobile device searches",
             "jpapi_command": "advanced-searches",
             "file_patterns": [
+                "{environment}-computer-advanced-searches-export-*.csv",
                 "{environment}-advanced-searches-export-*.csv",
                 "{environment}-searches-export-*.csv",
+                "computer-advanced-searches-export-*.csv",
                 "advanced-searches-export-*.csv",
                 "searches-export-*.csv"
             ],
@@ -252,7 +254,7 @@
             "display_name": "Computer Groups",
             "icon": "\ud83d\udc65",
             "description": "Computer groups and smart groups",
-            "jpapi_command": "computer groups",
+            "jpapi_command": "groups",
             "file_patterns": [
                 "{environment}-computer-groups-export-*.csv",
                 "computer-groups-export-*.csv",

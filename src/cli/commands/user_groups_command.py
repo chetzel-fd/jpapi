@@ -13,6 +13,7 @@ from .common_imports import (
     Optional,
     BaseCommand,
 )
+from resources.config.api_endpoints import APIRegistry
 
 
 class UserGroupsCommand(BaseCommand):
@@ -70,9 +71,7 @@ class UserGroupsCommand(BaseCommand):
             help="Filter by site name",
         )
 
-    def _list_smart_groups(
-        self, args: Namespace, pattern: Optional[Any] = None
-    ) -> int:
+    def _list_smart_groups(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List smart user groups"""
         return self._list_groups("smart", args)
 
@@ -82,34 +81,28 @@ class UserGroupsCommand(BaseCommand):
         """List static user groups"""
         return self._list_groups("static", args)
 
-    def _list_all_groups(
-        self, args: Namespace, pattern: Optional[Any] = None
-    ) -> int:
+    def _list_all_groups(self, args: Namespace, pattern: Optional[Any] = None) -> int:
         """List all user groups"""
         return self._list_groups("all", args)
 
     def _list_groups(self, group_type: str, args: Namespace) -> int:
         """Generic method to list user groups"""
         try:
-            # API endpoint mapping
-            endpoints = {
-                "smart": "/JSSResource/smartusergroups",
-                "static": "/JSSResource/staticusergroups",
-            }
-
             if group_type == "all":
-                # List all types
+                # List all types using APIRegistry
                 all_groups = []
-                for group_type_name, endpoint in endpoints.items():
-                    groups = self._fetch_groups(endpoint, group_type_name)
+                for group_type_name in ["smart", "static"]:
+                    groups = self._fetch_groups(group_type_name)
                     all_groups.extend(groups)
                 groups = all_groups
             else:
-                endpoint = endpoints.get(group_type)
-                if not endpoint:
+                # Validate group type exists in APIRegistry
+                try:
+                    APIRegistry.get_list_endpoint(group_type)
+                except ValueError:
                     print(f"❌ Unknown group type: {group_type}")
                     return 1
-                groups = self._fetch_groups(endpoint, group_type)
+                groups = self._fetch_groups(group_type)
 
             if not groups:
                 print(f"❌ No {group_type} user groups found")
@@ -119,9 +112,7 @@ class UserGroupsCommand(BaseCommand):
             filtered_groups = self._apply_group_filters(groups, args)
 
             # Format and output
-            formatted_data = self._format_groups_for_display(
-                filtered_groups, args
-            )
+            formatted_data = self._format_groups_for_display(filtered_groups, args)
             output = self.format_output(formatted_data, args.format)
             self.save_output(output, args.output)
 
@@ -131,25 +122,25 @@ class UserGroupsCommand(BaseCommand):
         except Exception as e:
             return self.handle_api_error(e)
 
-    def _fetch_groups(self, endpoint: str, group_type: str) -> List[Dict[str, Any]]:
-        """Fetch groups from API endpoint"""
+    def _fetch_groups(self, group_type: str) -> List[Dict[str, Any]]:
+        """Fetch groups from API using APIRegistry"""
         print(f"👥 Fetching {group_type} user groups...")
+
+        # Get endpoint from APIRegistry
+        endpoint = APIRegistry.get_list_endpoint(group_type)
         response = self.auth.api_request("GET", endpoint)
 
-        # Extract groups from response based on type
-        if group_type == "smart":
-            if "user_groups" in response:
-                groups_data = response["user_groups"]
-                if "user_group" in groups_data:
-                    groups = groups_data["user_group"]
-                    return groups if isinstance(groups, list) else [groups]
+        # Extract groups using APIRegistry
+        groups = APIRegistry.extract_list_response(group_type, response)
+        if groups:
+            return groups
 
-        elif group_type == "static":
-            if "user_groups" in response:
-                groups_data = response["user_groups"]
-                if "user_group" in groups_data:
-                    groups = groups_data["user_group"]
-                    return groups if isinstance(groups, list) else [groups]
+        # Fallback for backward compatibility
+        if "user_groups" in response:
+            groups_data = response["user_groups"]
+            if "user_group" in groups_data:
+                groups = groups_data["user_group"]
+                return groups if isinstance(groups, list) else [groups]
 
         return []
 
@@ -171,7 +162,8 @@ class UserGroupsCommand(BaseCommand):
         # Site filtering
         if hasattr(args, "site") and args.site:
             filtered = [
-                group for group in filtered
+                group
+                for group in filtered
                 if self._group_matches_site(group, args.site)
             ]
 
@@ -210,19 +202,33 @@ class UserGroupsCommand(BaseCommand):
                     formatted_group["Description"] = group.get("description", "")
 
                 if "criteria" in group and group["criteria"]:
-                    criteria_count = len(group["criteria"]) if isinstance(group["criteria"], list) else 1
+                    criteria_count = (
+                        len(group["criteria"])
+                        if isinstance(group["criteria"], list)
+                        else 1
+                    )
                     formatted_group["Criteria Count"] = criteria_count
 
                 if "users" in group and group["users"]:
-                    users_count = len(group["users"]) if isinstance(group["users"], list) else 1
+                    users_count = (
+                        len(group["users"]) if isinstance(group["users"], list) else 1
+                    )
                     formatted_group["User Count"] = users_count
 
                 if "user_additions" in group and group["user_additions"]:
-                    additions_count = len(group["user_additions"]) if isinstance(group["user_additions"], list) else 1
+                    additions_count = (
+                        len(group["user_additions"])
+                        if isinstance(group["user_additions"], list)
+                        else 1
+                    )
                     formatted_group["User Additions"] = additions_count
 
                 if "user_deletions" in group and group["user_deletions"]:
-                    deletions_count = len(group["user_deletions"]) if isinstance(group["user_deletions"], list) else 1
+                    deletions_count = (
+                        len(group["user_deletions"])
+                        if isinstance(group["user_deletions"], list)
+                        else 1
+                    )
                     formatted_group["User Deletions"] = deletions_count
 
             formatted.append(formatted_group)

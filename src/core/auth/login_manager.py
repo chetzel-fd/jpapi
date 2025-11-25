@@ -18,6 +18,7 @@ If you encounter issues, consider using the core CLI features instead.
 """
 
 
+import os
 import subprocess
 import urllib.request
 import urllib.error
@@ -40,21 +41,23 @@ class UnifiedJamfAuth(AuthInterface):
     Combines the best features from existing auth modules into one clean implementation
     """
 
-    def __init__(self, environment: str = "dev", backend: str = "keychain"):
+    def __init__(self, environment: str = "sandbox", backend: str = "keychain"):
         super().__init__(environment)
         self.backend = backend
-        # Handle custom service names for different environments
-        if environment == "dev":
+        # Handle custom service names for different environments (with back-compat aliases)
+        env = (environment or "").lower()
+        if env in ("dev", "sandbox"):
             self.service_name = "jpapi_sandbox"
-        elif environment == "prod":
+        elif env in ("prod", "production"):
             self.service_name = "jpapi_production"  # Custom production service name
         else:
-            self.service_name = f"jpapi_{environment}"
+            self.service_name = f"jpapi_{env}"
 
-        # Environment URLs
+        # Environment URLs - configure via jpapi setup or environment variables
         self.environment_urls = {
-            "sandbox": "https://fanduelgrouptest.jamfcloud.com",
-            "prod": "https://fanduelgrouptest.jamfcloud.com",
+            "sandbox": os.environ.get("JPAPI_SANDBOX_URL", ""),
+            "prod": os.environ.get("JPAPI_PROD_URL", ""),
+            "production": os.environ.get("JPAPI_PROD_URL", ""),
         }
 
         # Cache
@@ -353,10 +356,10 @@ class UnifiedJamfAuth(AuthInterface):
             # Handle custom account names for different environments
             # Map environment names to keychain account names
             account_mapping = {
-                "dev": "sandbox",  # dev environment uses sandbox account
-                "prod": "production",  # prod environment uses production account
-                "sandbox": "sandbox",  # direct sandbox mapping
-                "production": "production",  # direct production mapping
+                "dev": "sandbox",  # alias: dev -> sandbox
+                "prod": "production",  # alias: prod -> production
+                "sandbox": "sandbox",
+                "production": "production",
             }
             account_name = account_mapping.get(self.environment, self.environment)
 
@@ -385,10 +388,10 @@ class UnifiedJamfAuth(AuthInterface):
             # Handle custom account names for different environments
             # Map environment names to keychain account names
             account_mapping = {
-                "dev": "sandbox",  # dev environment uses sandbox account
-                "prod": "production",  # prod environment uses production account
-                "sandbox": "sandbox",  # direct sandbox mapping
-                "production": "production",  # direct production mapping
+                "dev": "sandbox",  # alias: dev -> sandbox
+                "sandbox": "sandbox",
+                "prod": "prod",
+                "production": "production",
             }
             account_name = account_mapping.get(self.environment, self.environment)
 

@@ -16,11 +16,20 @@ from .common_imports import (
 import argparse
 import json
 import xml.etree.ElementTree as ET
+from datetime import datetime
+from resources.config.api_endpoints import APIRegistry
 from lib.utils.manage_signatures import (
     add_signature_to_name,
     get_user_signature,
     set_user_signature,
 )
+
+# SOLID: Import services and handlers
+from .create.services.xml_converter import XMLConverterService
+from .create.services.profile_converter import ProfileConverterService
+from .create.services.criteria_parser import CriteriaParserService
+from .create.services.production_checker import ProductionCheckerAdapter
+from .create.handlers.handler_registry import create_handler_registry
 
 
 class CreateCommand(BaseCommand):
@@ -32,34 +41,26 @@ class CreateCommand(BaseCommand):
             description="Create new JAMF objects (categories, policies, searches)",
         )
 
+        # SOLID: Initialize services (SRP, DIP)
+        self.xml_converter = XMLConverterService()
+        self.profile_converter = ProfileConverterService()
+        self.criteria_parser = CriteriaParserService()
+        self.production_checker = ProductionCheckerAdapter(self)
+
+        # SOLID: Initialize handler registry (OCP)
+        self._handler_registry = None
+
+    def _get_handler_registry(self):
+        """Lazy initialization of handler registry"""
+        if self._handler_registry is None:
+            self._handler_registry = create_handler_registry(
+                self.auth, self.xml_converter, self.production_checker
+            )
+        return self._handler_registry
+
     def dict_to_xml(self, data: Dict[str, Any], root_name: str) -> str:
-        """Convert dictionary to XML string for JAMF API"""
-
-        def dict_to_xml_elem(parent, data):
-            if isinstance(data, dict):
-                for key, value in data.items():
-                    if isinstance(value, (dict, list)):
-                        child = ET.SubElement(parent, key)
-                        dict_to_xml_elem(child, value)
-                    else:
-                        child = ET.SubElement(parent, key)
-                        if value is not None:
-                            child.text = str(value)
-            elif isinstance(data, list):
-                for item in data:
-                    if isinstance(item, dict):
-                        dict_to_xml_elem(parent, item)
-                    else:
-                        child = ET.SubElement(parent, "item")
-                        if item is not None:
-                            child.text = str(item)
-
-        root = ET.Element(root_name)
-        dict_to_xml_elem(root, data)
-
-        # Convert to string with proper formatting
-        ET.indent(root, space="  ", level=0)
-        return ET.tostring(root, encoding="unicode")
+        """Convert dictionary to XML string for JAMF API (delegates to service)"""
+        return self.xml_converter.dict_to_xml(data, root_name)
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add create command arguments with comprehensive aliases"""
@@ -223,6 +224,11 @@ class CreateCommand(BaseCommand):
             default="computer",
             help="Group type",
         )
+        smart_group_parser.add_argument(
+            "--id",
+            type=int,
+            help="Update existing group by ID instead of creating new one",
+        )
         self.setup_common_args(smart_group_parser)
 
         # Profiles - main command with aliases in help
@@ -287,6 +293,46 @@ class CreateCommand(BaseCommand):
             )
             self.setup_common_args(alias_parser)
 
+        # Extension attributes
+        ext_attr_parser = subparsers.add_parser(
+            "extension-attribute", help="Create extension attribute"
+        )
+        ext_attr_parser.add_argument(
+            "attr_type",
+            choices=["computer", "mobile", "user"],
+            help="Extension attribute type",
+        )
+        ext_attr_parser.add_argument("name", help="Attribute name")
+        ext_attr_parser.add_argument("--description", help="Attribute description")
+        ext_attr_parser.add_argument(
+            "--data-type",
+            choices=["String", "Integer", "Date", "Boolean"],
+            default="String",
+            help="Data type",
+        )
+        ext_attr_parser.add_argument(
+            "--input-type",
+            choices=["Text Field", "Pop-up Menu", "Script", "LDAP Mapping"],
+            default="Text Field",
+            help="Input type",
+        )
+        ext_attr_parser.add_argument(
+            "--script-file",
+            help="Path to script file (auto-sets input-type to Script)",
+        )
+        ext_attr_parser.add_argument(
+            "--enabled",
+            action="store_true",
+            default=True,
+            help="Enable the attribute",
+        )
+        ext_attr_parser.add_argument(
+            "--inventory-display",
+            default="Extension Attributes",
+            help="Inventory display section (default: Extension Attributes)",
+        )
+        self.setup_common_args(ext_attr_parser)
+
         # Signature configuration
         signature_parser = subparsers.add_parser(
             "signature", help="Configure signature settings"
@@ -298,7 +344,7 @@ class CreateCommand(BaseCommand):
             "--show", action="store_true", help="Show current signature"
         )
         signature_parser.add_argument(
-            "--reset", action="store_true", help="Reset to default signature (chetzel)"
+            "--reset", action="store_true", help="Reset to default signature (admin)"
         )
         self.setup_common_args(signature_parser)
 
@@ -313,7 +359,7 @@ class CreateCommand(BaseCommand):
             print("🚨 PRODUCTION ENVIRONMENT DETECTED 🚨")
             print("=" * 60)
             print(f"Environment: {self.environment.upper()}")
-            print(f"Timestamp: {self._get_timestamp()}")
+            print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             print("=" * 60)
             print("⚠️  WARNING: You are about to CREATE objects in PRODUCTION!")
             print("   • This will modify live JAMF Pro data")
@@ -383,12 +429,15 @@ class CreateCommand(BaseCommand):
                 print("   Smart Groups: smart-group, smart, smartgrp")
                 return 1
 
-            # Route to appropriate handler
-            if args.create_object in ["category", "cat", "cats"]:
-                return self._create_category(args)
-            elif args.create_object in ["policy", "pol", "policies"]:
-                return self._create_policy(args)
-            elif args.create_object in ["profile", "prof", "profiles"]:
+            # SOLID: Use handler registry (OCP, Strategy pattern)
+            registry = self._get_handler_registry()
+            handler = registry.find_handler(args.create_object)
+
+            if handler:
+                return handler.create(args)
+
+            # Fallback to legacy handlers for complex operations
+            if args.create_object in ["profile", "prof", "profiles"]:
                 return self._create_profile(args)
             elif args.create_object in ["search", "find", "searches"]:
                 return self._create_search(args)
@@ -396,6 +445,8 @@ class CreateCommand(BaseCommand):
                 return self._create_group(args)
             elif args.create_object in ["smart-group", "smart", "smartgrp"]:
                 return self._create_smart_group(args)
+            elif args.create_object == "extension-attribute":
+                return self._create_extension_attribute(args)
             elif args.create_object == "signature":
                 return self._configure_signature(args)
             else:
@@ -920,55 +971,12 @@ Profile Creation Summary:
             return 1
 
     def _convert_mobileconfig_to_xml(self, mobileconfig_data: dict) -> str:
-        """Convert mobileconfig data to XML-escaped string for Jamf Pro"""
-        import plistlib
-        import xml.sax.saxutils
-
-        # Convert mobileconfig to XML string
-        mobileconfig_xml = plistlib.dumps(
-            mobileconfig_data, fmt=plistlib.FMT_XML
-        ).decode("utf-8")
-
-        # XML-escape the content for embedding in Jamf Pro XML
-        escaped_xml = xml.sax.saxutils.escape(mobileconfig_xml)
-
-        return escaped_xml
+        """Convert mobileconfig data to XML-escaped string (delegates to service)"""
+        return self.profile_converter.mobileconfig_to_xml(mobileconfig_data)
 
     def _convert_json_to_mobileconfig_xml(self, json_data: dict) -> str:
-        """Convert JSON data to mobileconfig XML format for Jamf Pro"""
-        import plistlib
-        import xml.sax.saxutils
-
-        # Convert JSON to mobileconfig format
-        mobileconfig_data = {
-            "PayloadUUID": json_data.get("PayloadUUID", "auto-generated"),
-            "PayloadType": "com.apple.TCC.configuration-profile-policy",
-            "PayloadOrganization": json_data.get(
-                "PayloadOrganization", "Your Organization"
-            ),
-            "PayloadIdentifier": json_data.get("PayloadIdentifier", "auto-generated"),
-            "PayloadDisplayName": json_data.get(
-                "PayloadDisplayName", "Configuration Profile"
-            ),
-            "PayloadDescription": json_data.get(
-                "PayloadDescription", "Configuration profile created by jpapi"
-            ),
-            "PayloadVersion": 1,
-            "PayloadEnabled": True,
-            "PayloadRemovalDisallowed": False,
-            "PayloadScope": "System",
-            "PayloadContent": json_data.get("PayloadContent", []),
-        }
-
-        # Convert to XML string
-        mobileconfig_xml = plistlib.dumps(
-            mobileconfig_data, fmt=plistlib.FMT_XML
-        ).decode("utf-8")
-
-        # XML-escape the content for embedding in Jamf Pro XML
-        escaped_xml = xml.sax.saxutils.escape(mobileconfig_xml)
-
-        return escaped_xml
+        """Convert JSON data to mobileconfig XML format (delegates to service)"""
+        return self.profile_converter.json_to_mobileconfig_xml(json_data)
 
     def _create_search(self, args: Namespace) -> int:
         """Create a new search template"""
@@ -1125,20 +1133,59 @@ Profile Creation Summary:
                 print("❌ No valid criteria provided")
                 return 1
 
+            # Check if updating existing group
+            is_update = hasattr(args, "id") and args.id is not None
+
+            # If updating, get existing group to preserve name and other fields
+            if is_update:
+                # Get existing group data using JSON API (more reliable)
+                existing_endpoint = (
+                    f"/JSSResource/computergroups/id/{args.id}"
+                    if args.type == "computer"
+                    else f"/JSSResource/mobiledevicegroups/id/{args.id}"
+                )
+                existing_response = self.auth.api_request("GET", existing_endpoint)
+
+                if not existing_response:
+                    print(f"❌ Group with ID {args.id} not found")
+                    return 1
+
+                # Extract existing name from response
+                group_key = (
+                    "computer_group"
+                    if args.type == "computer"
+                    else "mobile_device_group"
+                )
+                if group_key in existing_response:
+                    existing_group = existing_response[group_key]
+                    if "name" in existing_group:
+                        signed_name = existing_group["name"]
+
+                print(f"🔄 Updating Smart Group (ID: {args.id}): {signed_name}")
+
             # Create XML structure for smart group
             xml_data = self._create_smart_group_xml_from_criteria(
                 signed_name, criteria_list, args.type
             )
 
             # Determine endpoint
-            endpoint = (
-                "/JSSResource/computergroups/id/0"
-                if args.type == "computer"
-                else "/JSSResource/mobiledevicegroups/id/0"
-            )
+            if is_update:
+                endpoint = (
+                    f"/JSSResource/computergroups/id/{args.id}"
+                    if args.type == "computer"
+                    else f"/JSSResource/mobiledevicegroups/id/{args.id}"
+                )
+                method = "PUT"
+            else:
+                endpoint = (
+                    "/JSSResource/computergroups/id/0"
+                    if args.type == "computer"
+                    else "/JSSResource/mobiledevicegroups/id/0"
+                )
+                method = "POST"
 
-            # Create group via API using XML
-            response = self.auth.api_request_xml("POST", endpoint, xml_data)
+            # Create or update group via API using XML
+            response = self.auth.api_request_xml(method, endpoint, xml_data)
 
             if response and "raw_response" in response:
                 # Parse the XML response to get group ID
@@ -1150,7 +1197,8 @@ Profile Creation Summary:
                     if group_id is not None:
                         group_id_text = group_id.text
 
-                        print(f"✅ Smart group created successfully!")
+                        action = "updated" if is_update else "created"
+                        print(f"✅ Smart group {action} successfully!")
                         print(f"   Name: {signed_name}")
                         print(f"   Type: {args.type}")
                         print(f"   Group ID: {group_id_text}")
@@ -1262,26 +1310,8 @@ Profile Creation Summary:
         return ET.tostring(root, encoding="unicode")
 
     def _parse_criteria(self, criteria_input: str) -> List[Dict[str, str]]:
-        """Parse criteria string into list of criterion dictionaries"""
-        criteria_list = []
-
-        # Split by comma, but be careful with quoted values
-        import re
-
-        # Use regex to split by comma, but not inside quotes
-        parts = re.split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', criteria_input)
-
-        for part in parts:
-            part = part.strip()
-            if ":" in part:
-                key, value = part.split(":", 1)
-                key = key.strip()
-                value = value.strip().strip("\"'")  # Remove quotes
-
-                if key and value:
-                    criteria_list.append({"type": key, "value": value})
-
-        return criteria_list
+        """Parse criteria string (delegates to service)"""
+        return self.criteria_parser.parse_criteria(criteria_input)
 
     def _create_smart_group_xml_from_criteria(
         self, name: str, criteria_list: List[Dict[str, str]], group_type: str
@@ -1357,6 +1387,42 @@ Profile Creation Summary:
     </criterion>"""
                 criteria_xml += criterion_xml + "\n"
                 current_priority += 1
+            elif criterion_type == "job_title":
+                # Parse job titles and create separate criteria for each with OR logic
+                job_titles = self._parse_job_titles(criterion_value)
+                if job_titles:
+                    for j, job_title in enumerate(job_titles):
+                        # Use 'or' for subsequent job title criteria
+                        and_or = "or" if j > 0 else "and"
+
+                        # Determine search type: use "like" for wildcard patterns, "is" for exact matches
+                        search_type = (
+                            "like" if "*" in job_title or "?" in job_title else "is"
+                        )
+
+                        # Escape XML special characters in job title value
+                        job_title_escaped = (
+                            job_title.replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;")
+                            .replace('"', "&quot;")
+                            .replace("'", "&apos;")
+                        )
+
+                        # Use "Position" as the field name for job title in computer groups
+                        field_name = "Position"
+
+                        criterion_xml = f"""    <criterion>
+      <name>{field_name}</name>
+      <priority>{current_priority}</priority>
+      <and_or>{and_or}</and_or>
+      <search_type>{search_type}</search_type>
+      <value>{job_title_escaped}</value>
+      <opening_paren>false</opening_paren>
+      <closing_paren>false</closing_paren>
+    </criterion>"""
+                        criteria_xml += criterion_xml + "\n"
+                        current_priority += 1
             else:
                 # Generic criteria
                 criterion_xml = f"""    <criterion>
@@ -1387,28 +1453,12 @@ Profile Creation Summary:
         return xml_template
 
     def _parse_email_addresses(self, emails_input: str) -> List[str]:
-        """Parse email addresses from input string"""
-        # Support both comma and pipe separation
-        if "|" in emails_input:
-            emails = [email.strip() for email in emails_input.split("|")]
-        else:
-            emails = [email.strip() for email in emails_input.split(",")]
+        """Parse email addresses (delegates to service)"""
+        return self.criteria_parser.parse_email_addresses(emails_input)
 
-        # Validate email format (basic validation)
-        valid_emails = []
-        for email in emails:
-            if email:
-                # Check if it's a full email address or just username
-                if "@" in email and "." in email.split("@")[1]:
-                    # Full email address
-                    valid_emails.append(email)
-                elif "@" not in email and "." in email:
-                    # Username only - we'll add domain later
-                    valid_emails.append(email)
-                else:
-                    print(f"⚠️  Skipping invalid email: {email}")
-
-        return valid_emails
+    def _parse_job_titles(self, job_titles_input: str) -> List[str]:
+        """Parse job titles (delegates to service)"""
+        return self.criteria_parser.parse_job_titles(job_titles_input)
 
     def _create_email_regex_pattern(self, emails: List[str], domain: str) -> str:
         """Create regex pattern for email matching"""
@@ -1568,6 +1618,145 @@ Profile Creation Summary:
 
         return self._create_group(mock_args)
 
+    def _create_extension_attribute(self, args: Namespace) -> int:
+        """Create extension attribute with optional script support"""
+        try:
+            print(f"🔧 Creating {args.attr_type} extension attribute")
+            print(f"   Name: {args.name}")
+
+            # Map attribute type to API endpoint
+            endpoint_mapping = {
+                "computer": "/JSSResource/computerextensionattributes/id/0",
+                "mobile": ("/JSSResource/mobiledeviceextensionattributes/id/0"),
+                "user": "/JSSResource/userextensionattributes/id/0",
+            }
+
+            endpoint = endpoint_mapping.get(args.attr_type)
+            if not endpoint:
+                print(f"❌ Unknown attribute type: {args.attr_type}")
+                return 1
+
+            # Handle script file if provided
+            script_contents = None
+            input_type = getattr(args, "input_type", "Text Field")
+
+            if hasattr(args, "script_file") and args.script_file:
+                from pathlib import Path
+
+                script_path = Path(args.script_file).expanduser()
+
+                if not script_path.exists():
+                    print(f"❌ Script file not found: {script_path}")
+                    return 1
+
+                print(f"   Script: {script_path.name}")
+
+                try:
+                    with open(script_path, "r") as f:
+                        script_contents = f.read()
+                    input_type = "Script"  # Auto-set to Script type
+                    print(f"   Script loaded: {len(script_contents)} bytes")
+                except Exception as e:
+                    print(f"❌ Failed to read script file: {e}")
+                    return 1
+
+            # Build input_type structure
+            input_type_data = {"type": input_type}
+
+            # Add script if provided
+            if script_contents:
+                input_type_data["script"] = script_contents
+
+            # Build extension attribute data
+            attr_data = {
+                "name": args.name,
+                "description": getattr(args, "description", ""),
+                "data_type": getattr(args, "data_type", "String"),
+                "input_type": input_type_data,
+                "enabled": getattr(args, "enabled", True),
+                "inventory_display": getattr(
+                    args, "inventory_display", "Extension Attributes"
+                ),
+                "recon_display": getattr(
+                    args, "inventory_display", "Extension Attributes"
+                ),
+            }
+
+            # Convert to XML for Classic API
+            import xml.etree.ElementTree as ET
+
+            # Build XML structure based on type
+            if args.attr_type == "computer":
+                root = ET.Element("computer_extension_attribute")
+            elif args.attr_type == "mobile":
+                root = ET.Element("mobile_device_extension_attribute")
+            else:
+                root = ET.Element("user_extension_attribute")
+
+            # Add fields
+            ET.SubElement(root, "name").text = attr_data["name"]
+            ET.SubElement(root, "description").text = attr_data.get("description", "")
+            ET.SubElement(root, "data_type").text = attr_data["data_type"]
+            ET.SubElement(root, "enabled").text = str(attr_data["enabled"]).lower()
+            ET.SubElement(root, "inventory_display").text = attr_data[
+                "inventory_display"
+            ]
+            ET.SubElement(root, "recon_display").text = attr_data["recon_display"]
+
+            # Add input_type
+            input_type_elem = ET.SubElement(root, "input_type")
+            ET.SubElement(input_type_elem, "type").text = input_type_data["type"]
+            if "script" in input_type_data:
+                # Required for script type
+                ET.SubElement(input_type_elem, "platform").text = "Mac"
+                ET.SubElement(input_type_elem, "script").text = input_type_data[
+                    "script"
+                ]
+
+            # Convert to XML string
+            xml_payload = ET.tostring(root, encoding="unicode", method="xml")
+
+            # Make API request with XML
+            print(f"   Endpoint: {endpoint}")
+            response = self.auth.api_request(
+                "POST", endpoint, data=xml_payload, content_type="xml"
+            )
+
+            if response:
+                print("✅ Extension attribute created successfully!")
+                # Extract ID from response
+                ea_id = None
+                if (
+                    args.attr_type == "computer"
+                    and "computer_extension_attribute" in response
+                ):
+                    ea_id = response["computer_extension_attribute"].get("id")
+                elif (
+                    args.attr_type == "mobile"
+                    and "mobile_device_extension_attribute" in response
+                ):
+                    ea_id = response["mobile_device_extension_attribute"].get("id")
+                elif (
+                    args.attr_type == "user" and "user_extension_attribute" in response
+                ):
+                    ea_id = response["user_extension_attribute"].get("id")
+                else:
+                    ea_id = response.get("id")
+
+                if ea_id:
+                    print(f"   ID: {ea_id}")
+                return 0
+            else:
+                print("❌ Failed to create: No response from API")
+                return 1
+
+        except Exception as e:
+            print(f"❌ Failed to create extension attribute: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return 1
+
     def _configure_signature(self, args: Namespace) -> int:
         """Configure signature settings"""
         try:
@@ -1590,10 +1779,10 @@ Profile Creation Summary:
                 return 0
 
             elif args.reset:
-                set_user_signature("chetzel")
-                print("✅ Signature reset to default: 'chetzel'")
+                set_user_signature("admin")
+                print("✅ Signature reset to default: 'admin'")
                 print(
-                    "   New objects will be named like: 'My Policy - chetzel 2025.09.12'"
+                    "   New objects will be named like: 'My Policy - admin 2025.09.12'"
                 )
                 return 0
 
@@ -1608,7 +1797,7 @@ Profile Creation Summary:
                     "   jpapi create signature --set 'jdoe'              # Set signature to 'jdoe'"
                 )
                 print(
-                    "   jpapi create signature --reset                   # Reset to default 'chetzel'"
+                    "   jpapi create signature --reset                   # Reset to default 'admin'"
                 )
                 print()
                 print("Environment variable:")

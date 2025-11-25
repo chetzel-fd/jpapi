@@ -90,7 +90,7 @@ class ExportBase(LoggingCommandMixin):
             return
 
         # Get environment from args or default to dev
-        environment = getattr(args, "env", "dev")
+        environment = getattr(args, "env", "sandbox")
 
         if args.format == "csv":
             output = self._generate_csv(data)
@@ -176,20 +176,16 @@ class ExportBase(LoggingCommandMixin):
             print(f"⚠️ Could not generate analysis report: {e}")
 
     def _generate_csv(self, data: List[Dict[str, Any]]) -> str:
-        """Generate CSV output with enhanced columns"""
+        """Generate CSV output"""
         if not data:
             return ""
 
-        # Add analysis columns to each row
-        enhanced_data = []
-        for row in data:
-            enhanced_row = self._add_analysis_columns(row)
-            enhanced_data.append(enhanced_row)
-
+        # Use data as-is without adding analysis columns
+        # Analysis columns can be added with --analysis flag if needed
         output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=enhanced_data[0].keys())
+        writer = csv.DictWriter(output, fieldnames=data[0].keys())
         writer.writeheader()
-        writer.writerows(enhanced_data)
+        writer.writerows(data)
         return output.getvalue()
 
     def _add_analysis_columns(self, row: Dict[str, Any]) -> Dict[str, Any]:

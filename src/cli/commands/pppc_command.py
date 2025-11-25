@@ -21,7 +21,7 @@ try:
 except ImportError:
     # Mock ConfigManager for standalone usage
     class ConfigManager:
-        def __init__(self, environment="dev"):
+        def __init__(self, environment="sandbox"):
             self.environment = environment
 
 
@@ -39,7 +39,7 @@ class PPPCCommand(BaseCommand):
         scan_parser = subparsers.add_parser(
             "scan", help="Scan applications for PPPC analysis"
         )
-        scan_parser.add_argument("--env", default="dev", help="Environment to use")
+        scan_parser.add_argument("--env", default="sandbox", help="Environment to use")
         scan_parser.add_argument(
             "--paths", "-p", action="append", help="Additional paths to scan"
         )
@@ -58,7 +58,7 @@ class PPPCCommand(BaseCommand):
         gen_parser = subparsers.add_parser(
             "generate", help="Generate PPPC profile for specific app"
         )
-        gen_parser.add_argument("--env", default="dev", help="Environment to use")
+        gen_parser.add_argument("--env", default="sandbox", help="Environment to use")
         gen_parser.add_argument(
             "--app-path", required=True, help="Path to application bundle"
         )
@@ -68,7 +68,9 @@ class PPPCCommand(BaseCommand):
         analyze_parser = subparsers.add_parser(
             "analyze", help="Analyze existing PPPC profiles"
         )
-        analyze_parser.add_argument("--env", default="dev", help="Environment to use")
+        analyze_parser.add_argument(
+            "--env", default="sandbox", help="Environment to use"
+        )
         analyze_parser.add_argument(
             "--profiles-dir", help="Directory containing PPPC profiles"
         )

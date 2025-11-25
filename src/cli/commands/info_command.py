@@ -208,7 +208,7 @@ class InfoCommand(BaseCommand):
             print("=" * 50)
 
             # Get environment from args or default
-            environment = getattr(args, "env", "dev")
+            environment = getattr(args, "env", "sandbox")
 
             # Base directory
             base_dir = Path(__file__).parent.parent.parent.parent

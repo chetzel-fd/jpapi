@@ -25,7 +25,7 @@ try:
 except ImportError:
     # Mock ConfigManager for standalone usage
     class ConfigManager:
-        def __init__(self, environment="dev"):
+        def __init__(self, environment="sandbox"):
             self.environment = environment
 
 
@@ -45,7 +45,9 @@ class ManifestCommand(BaseCommand):
         update_parser = subparsers.add_parser(
             "update", help="Update profile manifests from remote sources"
         )
-        update_parser.add_argument("--env", default="dev", help="Environment to use")
+        update_parser.add_argument(
+            "--env", default="sandbox", help="Environment to use"
+        )
         update_parser.add_argument(
             "--output", "-o", help="Output directory for manifest data"
         )
@@ -60,7 +62,9 @@ class ManifestCommand(BaseCommand):
         search_parser = subparsers.add_parser(
             "search", help="Search for profile manifests"
         )
-        search_parser.add_argument("--env", default="dev", help="Environment to use")
+        search_parser.add_argument(
+            "--env", default="sandbox", help="Environment to use"
+        )
         search_parser.add_argument(
             "--search", "-s", required=True, help="Search term for manifests"
         )
@@ -78,7 +82,9 @@ class ManifestCommand(BaseCommand):
         details_parser = subparsers.add_parser(
             "details", help="Get detailed information about a specific manifest"
         )
-        details_parser.add_argument("--env", default="dev", help="Environment to use")
+        details_parser.add_argument(
+            "--env", default="sandbox", help="Environment to use"
+        )
         details_parser.add_argument(
             "--bundle-id", required=True, help="Bundle ID to get details for"
         )
@@ -87,7 +93,9 @@ class ManifestCommand(BaseCommand):
         report_parser = subparsers.add_parser(
             "report", help="Generate a comprehensive manifest report"
         )
-        report_parser.add_argument("--env", default="dev", help="Environment to use")
+        report_parser.add_argument(
+            "--env", default="sandbox", help="Environment to use"
+        )
         report_parser.add_argument("--output", "-o", help="Output path for the report")
 
     def execute(self, args: Namespace) -> int:

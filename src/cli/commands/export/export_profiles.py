@@ -4,11 +4,10 @@ Profile Export Handler for jpapi CLI
 Handles export of macOS and iOS configuration profiles
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from argparse import Namespace
 from .export_base import ExportBase
-from .profile_analyzers import ProfileAnalyzerFactory
-from core.logging.command_mixin import log_operation, with_progress
+from core.logging.command_mixin import log_operation
 from lib.utils import create_jamf_hyperlink
 
 
@@ -18,6 +17,7 @@ class ExportProfiles(ExportBase):
     def __init__(self, auth, profile_type: str):
         super().__init__(auth, f"{profile_type} profiles")
         self.profile_type = profile_type
+        self.category_cache: Dict[int, Dict[str, Any]] = {}
 
         if profile_type == "macos":
             self.endpoint = "/JSSResource/osxconfigurationprofiles"
@@ -84,7 +84,7 @@ class ExportProfiles(ExportBase):
 
             # Basic profile data
             profile_data = self._get_basic_profile_data(
-                profile, getattr(args, "env", "dev")
+                profile, getattr(args, "env", "sandbox")
             )
 
             # Always add detailed info for config profiles (comprehensive analysis)
@@ -108,21 +108,61 @@ class ExportProfiles(ExportBase):
 
         return export_data
 
+    def _get_category_details(self, category_id: Optional[Any]) -> Dict[str, Any]:
+        """Get category details from API with caching"""
+        if not category_id:
+            return {}
+
+        # Convert to int if needed
+        try:
+            cat_id = int(category_id)
+        except (TypeError, ValueError):
+            return {}
+
+        # Check cache first
+        if cat_id in self.category_cache:
+            return self.category_cache[cat_id]
+
+        try:
+            endpoint = f"/JSSResource/categories/id/{cat_id}"
+            response = self.auth.api_request("GET", endpoint)
+            if "category" in response:
+                category_data = response["category"]
+                self.category_cache[cat_id] = category_data
+                return category_data
+        except Exception as e:
+            print(f"   ⚠️ Could not fetch category {cat_id}: {e}")
+
+        return {}
+
     def _get_basic_profile_data(
-        self, profile: Dict[str, Any], environment: str = "dev"
+        self, profile: Dict[str, Any], environment: str = "sandbox"
     ) -> Dict[str, Any]:
         """Get basic profile information with enhanced data collection"""
+        # Extract category info
+        category_obj = profile.get("category", {})
+        category_name = ""
+        category_description = ""
+
+        if isinstance(category_obj, dict):
+            category_name = category_obj.get("name", "")
+            category_id = category_obj.get("id", "")
+            if category_id:
+                # Fetch full category details including description
+                cat_details = self._get_category_details(category_id)
+                if cat_details:
+                    category_description = cat_details.get("description", "")
+        else:
+            category_name = str(category_obj) if category_obj else ""
+
         # Initialize with all possible fields to ensure CSV consistency
         return {
             "delete": "",  # Empty column for manual deletion tracking
             "ID": create_jamf_hyperlink("profiles", profile.get("id", ""), environment),
             "Name": profile.get("name", ""),
             "Description": profile.get("description", ""),
-            "Category": (
-                profile.get("category", {}).get("name", "")
-                if isinstance(profile.get("category"), dict)
-                else profile.get("category", "")
-            ),
+            "Category": category_name,
+            "Category Description": category_description,
             "Site": (
                 profile.get("site", {}).get("name", "")
                 if isinstance(profile.get("site"), dict)
@@ -176,6 +216,18 @@ class ExportProfiles(ExportBase):
             return {}
 
         detailed_data = {}
+
+        # Extract category information from detailed response (if available)
+        category_obj = detail.get("general", {}).get("category", {})
+        if isinstance(category_obj, dict) and category_obj.get("id"):
+            category_id = category_obj.get("id")
+            cat_details = self._get_category_details(category_id)
+            if cat_details:
+                # Update category info if we got more details
+                detailed_data["Category"] = cat_details.get("name", "")
+                detailed_data["Category Description"] = cat_details.get(
+                    "description", ""
+                )
 
         # Extract general information
         general = detail.get("general", {})
@@ -359,11 +411,11 @@ class ExportProfiles(ExportBase):
 
         # Look for specific settings
         if "askForPassword" in payloads_xml:
-            specific_data["Has Screen Saver Password"] = True
+            specific_data["Has Screen Saver Password"] = "Yes"
         if "allowAutoUnlock" in payloads_xml:
-            specific_data["Has Auto Unlock Setting"] = True
+            specific_data["Has Auto Unlock Setting"] = "Yes"
         if "SystemPolicyAllFiles" in payloads_xml:
-            specific_data["Has Full Disk Access"] = True
+            specific_data["Has Full Disk Access"] = "Yes"
 
         return specific_data
 
@@ -386,7 +438,7 @@ class ExportProfiles(ExportBase):
                 # Save profile file as JSON
                 import json
 
-                profile_file = self._download_file(
+                _ = self._download_file(
                     json.dumps(detail_profile, indent=2),
                     safe_name,
                     f"data/csv-exports/{self.profile_type}-profiles",
@@ -408,11 +460,11 @@ class ExportProfiles(ExportBase):
 
         # Show downloaded files summary if any
         if hasattr(self, "_downloaded_files") and self._downloaded_files:
-            print(
-                f"📁 Downloaded {len(self._downloaded_files)} {self.profile_type} profile files"
-            )
-            print(f"   Files saved to: data/csv-exports/{self.profile_type}-profiles")
-            print(f"\n📋 Downloaded Files:")
+            files_count = len(self._downloaded_files)
+            print(f"📁 Downloaded {files_count} " f"{self.profile_type} profile files")
+            files_path = f"data/csv-exports/{self.profile_type}-profiles"
+            print(f"   Files saved to: {files_path}")
+            print("\n📋 Downloaded Files:")
             for file_path in self._downloaded_files[:10]:  # Show first 10
                 print(f"   {file_path}")
             if len(self._downloaded_files) > 10:
@@ -426,8 +478,8 @@ class ExportAllProfiles(ExportBase):
 
     def __init__(self, auth):
         super().__init__(auth, "all profiles")
-        self.macos_handler = ProfileExportHandler(auth, "macos")
-        self.ios_handler = ProfileExportHandler(auth, "ios")
+        self.macos_handler = ExportProfiles(auth, "macos")
+        self.ios_handler = ExportProfiles(auth, "ios")
 
     def _fetch_data(self, args: Namespace) -> List[Dict[str, Any]]:
         """Fetch all profile data"""

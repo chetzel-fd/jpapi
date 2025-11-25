@@ -26,17 +26,20 @@ class ServerPorts:
 class Environments:
     """Environment configuration"""
 
-    default: str = "dev"
+    default: str = "sandbox"
     available: List[str] = None
     aliases: Dict[str, str] = None
 
     def __post_init__(self):
         if self.available is None:
-            self.available = ["dev", "staging", "prod", "test"]
+            self.available = ["sandbox", "staging", "production", "test"]
         if self.aliases is None:
             self.aliases = {
-                "development": "dev",
-                "production": "prod",
+                # Back-compat aliases map to canonical names
+                "dev": "sandbox",
+                "development": "sandbox",
+                "prod": "production",
+                "production": "production",
                 "testing": "test",
             }
 
@@ -117,15 +120,15 @@ class Logging:
 class Users:
     """User configuration"""
 
-    default_signature: str = "chetzel"
+    default_signature: str = "admin"
     available_users: List[str] = None
     user_roles: Dict[str, str] = None
 
     def __post_init__(self):
         if self.available_users is None:
-            self.available_users = ["chetzel", "jdoe", "admin"]
+            self.available_users = ["admin", "user", "readonly"]
         if self.user_roles is None:
-            self.user_roles = {"chetzel": "admin", "jdoe": "user", "admin": "admin"}
+            self.user_roles = {"admin": "admin", "user": "user", "readonly": "readonly"}
 
 
 @dataclass
@@ -286,6 +289,17 @@ class APIConfiguration:
     cache_api_responses: bool = True
     follow_redirects: bool = True
     verify_ssl: bool = True
+    
+    # Object ID limits
+    max_object_id: int = 999999
+    min_object_id: int = 1
+    
+    # Batch processing
+    batch_size: int = 100
+    
+    # Background processing intervals
+    progressive_scan_interval: int = 3600  # 1 hour
+    cache_cleanup_interval: int = 300  # 5 minutes
 
 
 class CentralConfig:
@@ -313,6 +327,13 @@ class CentralConfig:
 
         # Load configurations
         self._load_all_configs()
+
+    def normalize_environment(self, env: Optional[str]) -> str:
+        """Normalize an input environment/label to a canonical value."""
+        if not env:
+            return self.environments.default
+        e = str(env).strip().lower()
+        return self.environments.aliases.get(e, e)
 
     def _load_all_configs(self):
         """Load all configuration files"""

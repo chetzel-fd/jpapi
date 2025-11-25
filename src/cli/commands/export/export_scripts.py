@@ -4,7 +4,7 @@ Script Export Handler for jpapi CLI
 Handles export and download of JAMF scripts
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from argparse import Namespace
 from .export_base import ExportBase
 from core.logging.command_mixin import log_operation, with_progress
@@ -20,6 +20,8 @@ class ExportScripts(ExportBase):
         super().__init__(auth, "scripts")
         self.endpoint = "/JSSResource/scripts"
         self.detail_endpoint = "/JSSResource/scripts"
+        self.category_cache: Dict[str, Dict[str, Any]] = {}
+        self.categories_fetched = False
 
     @log_operation("Script Data Fetch")
     def _fetch_data(self, args: Namespace) -> List[Dict[str, Any]]:
@@ -40,6 +42,54 @@ class ExportScripts(ExportBase):
         result = scripts if isinstance(scripts, list) else []
         self.log_success(f"Found {len(result)} scripts")
         return result
+
+    def _fetch_all_categories(self) -> None:
+        """Fetch all categories and cache by name"""
+        if self.categories_fetched:
+            return
+
+        try:
+            response = self.auth.api_request("GET", "/JSSResource/categories")
+            if "categories" in response:
+                categories = response["categories"]
+                if isinstance(categories, dict) and "category" in categories:
+                    categories = categories["category"]
+
+                # Fetch details for each category and cache by name
+                if isinstance(categories, list):
+                    for cat_summary in categories:
+                        cat_id = cat_summary.get("id")
+                        cat_name = cat_summary.get("name")
+                        if cat_id and cat_name:
+                            try:
+                                cat_response = self.auth.api_request(
+                                    "GET", f"/JSSResource/categories/id/{cat_id}"
+                                )
+                                if "category" in cat_response:
+                                    self.category_cache[cat_name] = cat_response[
+                                        "category"
+                                    ]
+                            except Exception:
+                                pass  # Skip if can't fetch details
+
+            self.categories_fetched = True
+        except Exception as e:
+            self.log_error("Could not fetch categories", e)
+            self.categories_fetched = True
+
+    def _get_category_description(self, category_name: str) -> str:
+        """Get category description by name"""
+        if not category_name:
+            return ""
+
+        # Fetch all categories if not done yet
+        self._fetch_all_categories()
+
+        # Look up category in cache
+        if category_name in self.category_cache:
+            return self.category_cache[category_name].get("description", "")
+
+        return ""
 
     def _format_data(
         self, data: List[Dict[str, Any]], args: Namespace
@@ -62,7 +112,7 @@ class ExportScripts(ExportBase):
                 )
 
                 script_data = self._get_basic_script_data(
-                    script, getattr(args, "env", "dev")
+                    script, getattr(args, "env", "sandbox")
                 )
 
                 # Include script content if requested
@@ -123,15 +173,19 @@ class ExportScripts(ExportBase):
         return filtered
 
     def _get_basic_script_data(
-        self, script: Dict[str, Any], environment: str = "dev"
+        self, script: Dict[str, Any], environment: str = "sandbox"
     ) -> Dict[str, Any]:
         """Get basic script information"""
+        category_name = script.get("category", "")
+        category_description = self._get_category_description(category_name)
+
         return {
             "delete": "",  # Empty column for manual deletion tracking
             "ID": create_jamf_hyperlink("scripts", script.get("id", ""), environment),
             "Name": script.get("name", ""),
             "Description": script.get("info", ""),  # Use info as description
-            "Category": script.get("category", ""),
+            "Category": category_name,
+            "Category Description": category_description,
             "Priority": script.get("priority", ""),
             "Info": script.get("info", ""),
             "Parameters": script.get("parameter4", ""),
