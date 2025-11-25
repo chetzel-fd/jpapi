@@ -30,24 +30,57 @@ pip install -e .
 jpapi setup
 ```
 
-✨ **New:** JPAPI now auto-detects existing credentials in your macOS Keychain!  
+✨ **JPAPI auto-detects existing credentials in your macOS Keychain!**  
 If you've used JPAPI before, your credentials will be found automatically.
 
-The wizard will:
-- 🔍 **Auto-detect** existing keychain credentials (if any)
-- 📋 **Let you choose** from found credentials or enter new ones
-- 🔐 **Guide you through** JAMF Pro server URL, OAuth/Basic Auth
-- ✅ **Test connection** automatically to verify everything works
+#### Quick Setup Options
 
-#### Getting OAuth Credentials
+**Option 1: Interactive Setup (Recommended)**
+```bash
+jpapi setup
+# Follow the prompts to configure your JAMF Pro credentials
+```
+
+**Option 2: Setup for Specific Environment**
+```bash
+jpapi setup --env sandbox    # For sandbox/test environment
+jpapi setup --env production # For production environment
+```
+
+**Option 3: OAuth Setup (Direct)**
+```bash
+jpapi setup oauth
+# Paste the JSON from JAMF Pro when prompted
+```
+
+**Option 4: Basic Auth Setup**
+```bash
+jpapi setup basic
+# Enter username and password when prompted
+```
+
+#### Getting OAuth Credentials from JAMF Pro
 
 1. Log into your JAMF Pro server
 2. Navigate to: **Settings → System Settings → API Roles and Clients**
-3. Click **New**
-4. Create an API Client with required privileges
-5. **Copy the entire JSON response** that JAMF shows you
+3. Click **New** to create a new API Client
+4. Configure the client with required privileges
+5. **Copy the entire JSON response** that JAMF shows you (contains `client_id`, `client_secret`, and `url`)
 
-💡 **New:** Just paste the entire JSON from JAMF! No need to copy client_id and client_secret separately.
+💡 **Tip:** You can paste the entire JSON from JAMF Pro directly into the setup wizard - no need to copy fields separately!
+
+#### Verify Your Setup
+
+```bash
+# Test your connection
+jpapi setup test
+
+# List saved credentials
+jpapi setup list
+
+# Check what's configured
+jpapi list policies --limit 1
+```
 
 ### 3. Start Using JPAPI
 
@@ -213,8 +246,8 @@ jpapi/
 # Check installation
 jpapi --version
 
-# Verify authentication
-jpapi auth status
+# Verify authentication setup
+jpapi setup test
 
 # Run health check
 jpapi doctor
@@ -252,9 +285,10 @@ jpapi setup
 
 **Problem:** "Authentication failed" or 401 errors
 ```bash
-# Solution: Verify your credentials
-jpapi auth status
-jpapi setup  # Re-configure if needed
+# Solution: Test and re-configure credentials
+jpapi setup test      # Test current credentials
+jpapi setup           # Re-configure if needed
+jpapi setup oauth     # Or set up OAuth specifically
 ```
 
 ### Need More Help?
