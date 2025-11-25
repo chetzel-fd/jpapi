@@ -228,6 +228,11 @@ class SetupCommand(BaseCommand):
                 capture_output=False,
                 text=True,
             )
+            
+            # If setup was successful, offer PATH guidance
+            if result.returncode == 0:
+                self._offer_path_guidance()
+            
             return result.returncode
 
         except Exception as e:
@@ -641,7 +646,13 @@ class SetupCommand(BaseCommand):
             self._save_to_unified_keychain(label, jamf_url, client_id, client_secret)
 
             # Test connection
-            return self._test_auth_connection(args)
+            result = self._test_auth_connection(args)
+            
+            # Offer PATH guidance if setup was successful
+            if result == 0:
+                self._offer_path_guidance()
+            
+            return result
 
         except Exception as e:
             print(f"❌ OAuth setup failed: {e}")
@@ -701,7 +712,13 @@ class SetupCommand(BaseCommand):
             print(f"   Configuration saved to: {config_path}")
 
             # Test connection
-            return self._test_auth_connection(args)
+            result = self._test_auth_connection(args)
+            
+            # Offer PATH guidance if setup was successful
+            if result == 0:
+                self._offer_path_guidance()
+            
+            return result
 
         except Exception as e:
             print(f"❌ Basic auth setup failed: {e}")
@@ -745,3 +762,114 @@ class SetupCommand(BaseCommand):
             print(f"   ❌ Authentication test failed: {e}")
             print("   💡 Try running: jpapi setup auth")
             return 1
+
+    def _offer_path_guidance(self) -> None:
+        """Offer optional PATH configuration guidance if jpapi is not in PATH"""
+        try:
+            # Check if jpapi command is available in PATH
+            result = subprocess.run(
+                ["which", "jpapi"],
+                capture_output=True,
+                text=True,
+            )
+            
+            # Also check if symlink exists
+            home_dir = os.path.expanduser("~")
+            symlink_path = f"{home_dir}/.local/bin/jpapi"
+            symlink_exists = os.path.exists(symlink_path) or os.path.islink(symlink_path)
+            
+            if result.returncode == 0:
+                # jpapi is in PATH, no guidance needed
+                return
+            
+            # If symlink doesn't exist, don't offer PATH guidance
+            if not symlink_exists:
+                return
+            
+            # jpapi is not in PATH, offer guidance
+            print("\n" + "=" * 60)
+            print("📝 Optional: Add jpapi to your PATH")
+            print("=" * 60)
+            print()
+            print("The 'jpapi' command is not in your PATH.")
+            print("You can use it in one of these ways:")
+            print()
+            print("Option 1: Use the full path")
+            print("  /Users/{}/.jpapi/venv/bin/jpapi <command>".format(os.getenv("USER", "user")))
+            print()
+            print("Option 2: Add to PATH (recommended)")
+            print("  Add this line to your ~/.zshrc or ~/.bashrc:")
+            print('  export PATH="$HOME/.local/bin:$PATH"')
+            print()
+            print("  Then reload your shell:")
+            print("  source ~/.zshrc  # or source ~/.bashrc")
+            print()
+            print("Option 3: Create an alias")
+            print("  Add this to your ~/.zshrc or ~/.bashrc:")
+            print('  alias jpapi="/Users/{}/.jpapi/venv/bin/jpapi"'.format(os.getenv("USER", "user")))
+            print()
+            
+            # Try to detect the installation path
+            home_dir = os.path.expanduser("~")
+            jpapi_path = f"{home_dir}/.jpapi/venv/bin/jpapi"
+            if os.path.exists(jpapi_path):
+                print(f"  Your jpapi installation: {jpapi_path}")
+                print()
+            
+            response = input("Would you like to add jpapi to your PATH now? (y/N): ").strip().lower()
+            
+            if response in ["y", "yes"]:
+                self._add_to_path()
+            else:
+                print("  ✅ You can add it later using the instructions above.")
+                print()
+        
+        except Exception:
+            # Silently fail - this is optional guidance
+            pass
+
+    def _add_to_path(self) -> None:
+        """Add jpapi to user's PATH"""
+        try:
+            home_dir = os.path.expanduser("~")
+            shell = os.getenv("SHELL", "")
+            
+            # Determine which config file to use
+            if "zsh" in shell:
+                config_file = f"{home_dir}/.zshrc"
+            else:
+                config_file = f"{home_dir}/.bashrc"
+            
+            # Check if already added
+            if os.path.exists(config_file):
+                with open(config_file, "r") as f:
+                    content = f.read()
+                    if '.local/bin' in content:
+                        print(f"  ✅ PATH already configured in {config_file}")
+                        print(f"  Run: source {config_file}")
+                        return
+            
+            # Add PATH export
+            path_line = 'export PATH="$HOME/.local/bin:$PATH"\n'
+            
+            try:
+                with open(config_file, "a") as f:
+                    f.write("\n# JPAPI - Add to PATH\n")
+                    f.write(path_line)
+                
+                print(f"  ✅ Added to {config_file}")
+                print(f"  Run: source {config_file}")
+                print("  Or restart your terminal")
+                
+            except PermissionError:
+                print(f"  ⚠️  Cannot write to {config_file} (permission denied)")
+                print(f"  Please manually add this line to {config_file}:")
+                print(f"  {path_line.strip()}")
+            except Exception as e:
+                print(f"  ⚠️  Could not update {config_file}: {e}")
+                print(f"  Please manually add this line to {config_file}:")
+                print(f"  {path_line.strip()}")
+        
+        except Exception as e:
+            print(f"  ⚠️  Could not add to PATH: {e}")
+            print("  Please use Option 1 (full path) or manually configure PATH")
