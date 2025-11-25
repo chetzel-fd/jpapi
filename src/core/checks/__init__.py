@@ -1,0 +1,4 @@
+"""
+Checks module for JPAPI
+"""
+
