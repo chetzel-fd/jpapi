@@ -18,7 +18,7 @@ jpapi --env production devices lock csv "https://sharepoint.com/.../file.xlsx?e=
 ### Your SharePoint Link Example:
 
 ```bash
-jpapi --env production devices lock csv "https://fanduelgroup-my.sharepoint.com/:x:/g/personal/timothy_foucher_fanduel_com/Ec4NZDi-OEBClZSil3DpLtYBw2dBgQ5_RB3fQh9kNXk2Vw?e=WWQnhg"
+jpapi --env production devices lock csv "https://yourcompany-my.sharepoint.com/:x:/g/personal/user_company_com/EXAMPLE_ID?e=XXXXX"
 ```
 
 ## Column E Passcode Writing

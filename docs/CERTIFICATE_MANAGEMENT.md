@@ -128,7 +128,7 @@ jpapi crowdstrike create --type network --name "CrowdStrike Network"
 - `--type`: Type of profile (fda, pppc, network) (required)
 - `--name`: Profile name (auto-generated if not specified)
 - `--output`: Output file path
-- `--organization`: Organization name (default: FanDuel Group)
+- `--organization`: Organization name (default: Your Organization)
 - `--bundle-id`: CrowdStrike bundle identifier
 
 #### Sign Profiles (`sign`)
@@ -216,11 +216,11 @@ jpapi crowdstrike csr --upload
 jpapi certificate manage --identities
 
 # 2. Sign your package
-jpapi certificate sign --package "/Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914.pkg" \
+jpapi certificate sign --package "/path/to/your-package.pkg" \
   --identity "Developer ID Application: Your Name (ABC1234567)"
 
 # 3. Verify the signature
-codesign --verify --verbose /Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914_signed.pkg
+codesign --verify --verbose /path/to/your-package_signed.pkg
 
 # 4. Upload to Jamf Pro (if needed)
 # Use existing JPAPI commands to upload the signed package

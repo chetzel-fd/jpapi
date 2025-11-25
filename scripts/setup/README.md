@@ -6,9 +6,8 @@ This directory contains specialized setup scripts for different JPAPI installati
 
 **Don't use these scripts directly!** Instead, use the easy installation methods:
 
-- **One-line install**: `curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash`
-- **Homebrew**: `brew install fanduel/jpapi/jpapi`
-- **Docker**: `docker run -it --rm fanduel/jpapi:latest`
+- **One-line install**: `curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash`
+- **Git clone**: `git clone https://github.com/chetzel-fd/jpapi.git && cd jpapi && ./install.sh`
 
 ## 🔧 **For Developers**
 
@@ -36,7 +35,7 @@ These scripts are used internally by the main installation methods:
 Just run the one-line installer:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 ```
 
 This handles everything automatically!
@@ -47,7 +46,7 @@ For developers working on JPAPI:
 
 ```bash
 # Clone repository
-git clone https://github.com/fanduel/jpapi.git
+git clone https://github.com/chetzel-fd/jpapi.git
 cd jpapi
 
 # Install development dependencies

@@ -158,7 +158,7 @@ class PackageSigner:
                 for line in result.stdout.split("\n"):
                     if identity.lower() in line.lower() and ")" in line and '"' in line:
                         # Extract the hash and name from the line
-                        # Format: "1) 733B1F06D0A8510998D3C1DC3438568BA725BBEA "FanDuel Group""
+                        # Format: "1) 733B1F06D0A8510998D3C1DC3438568BA725BBEA "Your Organization""
                         parts = line.split(")")
                         if len(parts) >= 2:
                             hash_part = parts[1].strip().split()[0]
@@ -313,7 +313,7 @@ class PackageSigner:
                 for line in result.stdout.split("\n"):
                     if ")" in line and '"' in line:
                         # Extract identity from line like: "1) ABC1234567 "Developer ID Application: Your Name (ABC1234567)""
-                        # or "1) 733B1F06D0A8510998D3C1DC3438568BA725BBEA "FanDuel Group""
+                        # or "1) 733B1F06D0A8510998D3C1DC3438568BA725BBEA "Your Organization""
                         parts = line.split('"')
                         if len(parts) >= 2:
                             identity = parts[1]

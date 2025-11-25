@@ -54,8 +54,8 @@ cat > jpapi-global << 'EOF'
 # This script allows you to run jpapi from anywhere in the terminal
 # =============================================================================
 
-# JPAPI project directory
-JPAPI_DIR="/Users/charles.hetzel/cursor/jpapi"
+# JPAPI project directory - update to your installation path
+JPAPI_DIR="${JPAPI_DIR:-$HOME/jpapi}"
 
 # Check if JPAPI directory exists
 if [[ ! -d "$JPAPI_DIR" ]]; then

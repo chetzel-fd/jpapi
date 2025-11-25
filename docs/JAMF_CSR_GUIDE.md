@@ -6,12 +6,12 @@ Following the official Jamf Learning Hub directions: [Creating a Signing Certifi
 
 Your CSR has been generated with the following details:
 - **Common Name**: Code Signing Certificate
-- **Organization**: FanDuel Group
+- **Organization**: Your Organization
 - **Organizational Unit**: IT Department
 - **Country**: US
 - **State**: New York
-- **City**: New York
-- **Email**: fdg@fanduel.com
+- **City**: Your City
+- **Email**: admin@example.com
 
 **Generated Files:**
 - `Code_Signing_Certificate_csr.pem` - Certificate Signing Request
@@ -79,20 +79,20 @@ Once the certificate is imported and verified:
 
 ```bash
 # Sign your package using JPAPI
-jpapi certificate sign --package "/Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914.pkg" --identity "Code Signing Certificate"
+jpapi certificate sign --package "/path/to/your-package.pkg" --identity "Code Signing Certificate"
 
 # Or sign directly with codesign
-codesign --sign "Code Signing Certificate" --force --verbose /Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914.pkg
+codesign --sign "Code Signing Certificate" --force --verbose /path/to/your-package.pkg
 ```
 
 ## 🔍 Step 7: Verify the Signature
 
 ```bash
 # Verify the signed package
-codesign --verify --verbose /Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914_signed.pkg
+codesign --verify --verbose /path/to/your-package_signed.pkg
 
 # Check package info
-pkgutil --pkg-info-plist /Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914_signed.pkg
+pkgutil --pkg-info-plist /path/to/your-package_signed.pkg
 ```
 
 ## 🚨 Troubleshooting
@@ -118,7 +118,7 @@ pkgutil --pkg-info-plist /Users/charles.hetzel/Desktop/onboardingBundle-chetzel-
 After completing these steps, you should have:
 - ✅ A code signing certificate in your keychain
 - ✅ The ability to sign packages with `codesign`
-- ✅ A signed version of your `onboardingBundle-chetzel-20250914.pkg`
+- ✅ A signed version of your package
 - ✅ Full integration with JPAPI's package signing features
 
 ---

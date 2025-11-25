@@ -783,11 +783,12 @@ class JPAPIManagerController(UIController):
                 st.info(f"Running: {' '.join(cmd)}")
 
                 # Execute command
+                project_root = str(Path(__file__).parent.parent.parent.parent)
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     text=True,
-                    cwd="/Users/charles.hetzel/Documents/cursor/jpapi",
+                    cwd=project_root,
                 )
 
                 # DEBUG: Show what happened
@@ -946,11 +947,12 @@ class JPAPIManagerController(UIController):
                         "--force",
                     ]
 
+                    project_root = str(Path(__file__).parent.parent.parent.parent)
                     result = subprocess.run(
                         cmd,
                         capture_output=True,
                         text=True,
-                        cwd="/Users/charles.hetzel/Documents/cursor/jpapi",
+                        cwd=project_root,
                     )
 
                     if result.returncode == 0:
@@ -1010,11 +1012,12 @@ class JPAPIManagerController(UIController):
                 status_text.text(f"Deleting {deleted_count} {object_type}...")
                 progress_bar.progress(30)
 
+                project_root = str(Path(__file__).parent.parent.parent.parent)
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     text=True,
-                    cwd="/Users/charles.hetzel/Documents/cursor/jpapi",
+                    cwd=project_root,
                 )
 
                 progress_bar.progress(80)

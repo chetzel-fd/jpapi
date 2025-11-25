@@ -9,7 +9,6 @@ This directory contains operational utilities and maintenance tools for JPAPI.
 
 ### Infrastructure
 - `start_redis.sh` - Redis server startup script
-- `fanduel_proxy_server.py` - Proxy server utility
 
 ## 🚀 Usage
 
@@ -20,8 +19,6 @@ python3 scripts/tools/performance_monitor.py report
 # Start Redis
 ./scripts/tools/start_redis.sh
 
-# Proxy server
-python3 scripts/tools/fanduel_proxy_server.py
 ```
 
 ## 📊 Performance Monitor

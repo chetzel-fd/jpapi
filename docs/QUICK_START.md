@@ -11,25 +11,26 @@ Choose your preferred method:
 ### **Option 1: One-Line Install (Recommended)**
 ```bash
 # Install JPAPI in one command
-curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 ```
 
 ### **Option 2: Homebrew (macOS)**
 ```bash
-# Install via Homebrew
-brew install fanduel/jpapi/jpapi
+# Clone and install
+git clone https://github.com/chetzel-fd/jpapi.git
+cd jpapi && ./install.sh
 ```
 
 ### **Option 3: Docker**
 ```bash
-# Run with Docker
-docker run -it --rm fanduel/jpapi:latest
+# Verify installation
+jpapi --version
 ```
 
 ### **Option 4: Manual Installation**
 ```bash
 # Clone and install manually
-git clone https://github.com/fanduel/jpapi.git
+git clone https://github.com/chetzel-fd/jpapi.git
 cd jpapi
 python3 -m venv venv
 source venv/bin/activate

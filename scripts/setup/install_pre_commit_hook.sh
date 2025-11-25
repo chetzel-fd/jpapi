@@ -116,11 +116,10 @@ set -euo pipefail
 check_commit_message() {
     local commit_msg="$1"
     
-    # Patterns to check for in commit messages
+    # Patterns to check for in commit messages (customize for your org)
     local sensitive_patterns=(
-        'fanduel'
-        'FanDuel'
-        'charles\.hetzel'
+        'yourcompany'
+        'YourCompany'
         'client_secret'
         'api_key'
         'token'

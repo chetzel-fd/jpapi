@@ -39,7 +39,6 @@ scripts/
 - `tools/performance_monitor.py` - Performance tracking
 - `tools/start_redis.sh` - Redis server startup
 - `tools/utils.sh` - Common utility functions
-- `tools/fanduel_proxy_server.py` - Proxy server utility
 
 ## 🏗️ Architecture Alignment
 
@@ -53,7 +52,7 @@ Most scripts are designed to be run from the project root:
 
 ```bash
 # Setup (use main installer instead)
-curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 
 # Development
 ./scripts/dev/cursor_jpapi_helper.sh

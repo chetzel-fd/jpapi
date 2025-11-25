@@ -50,9 +50,8 @@ check_sensitive_patterns() {
         'client_secret.*[A-Za-z0-9_-]{20,}'
         'client_id.*[A-Za-z0-9_-]{20,}'
         'api_key.*[A-Za-z0-9_-]{20,}'
-        # Internal URLs
-        'fanduelgroup.*\.jamfcloud\.com'
-        'fanduel.*\.jamfcloud\.com'
+        # Internal URLs (customize for your organization)
+        'yourcompany.*\.jamfcloud\.com'
         # Company references
         'Example Company'
         'Internal toolkit for ExampleCorp'

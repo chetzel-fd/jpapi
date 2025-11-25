@@ -120,7 +120,7 @@ def create_real_installomator_policy(app_name, label, environment="sandbox"):
                     profile_content = f.read()
 
                 # Create profile in JAMF Pro
-                profile_name = f"{profile['name']} - chetzel 2025.10.20"
+                profile_name = f"{profile['name']} - {datetime.now().strftime('%Y.%m.%d')}"
 
                 # This would normally upload the profile
                 # For now, we'll just show what would happen

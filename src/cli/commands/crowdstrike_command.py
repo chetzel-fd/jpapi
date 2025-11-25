@@ -43,7 +43,7 @@ class CrowdStrikeCommand(BaseCommand):
         create_parser.add_argument("--name", help="Profile name")
         create_parser.add_argument("--output", help="Output file path")
         create_parser.add_argument(
-            "--organization", default="FanDuel Group", help="Organization name"
+            "--organization", default="Your Organization", help="Organization name"
         )
 
         # Profile Signing

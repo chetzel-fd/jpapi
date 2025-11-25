@@ -12,9 +12,9 @@ FULL_NAME=$(id -F "$LOGGED_IN_USER" 2>/dev/null || echo "$LOGGED_IN_USER")
 if [[ "$FULL_NAME" == *" "* ]]; then
     FIRST=$(echo "$FULL_NAME" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
     LAST=$(echo "$FULL_NAME" | awk '{print $NF}' | tr '[:upper:]' '[:lower:]')
-    USERNAME="${FIRST}.${LAST}@fanduel.com"
+    USERNAME="${FIRST}.${LAST}@${JPAPI_EMAIL_DOMAIN:-example.com}"
 else
-    USERNAME="${LOGGED_IN_USER}@fanduel.com"
+    USERNAME="${LOGGED_IN_USER}@${JPAPI_EMAIL_DOMAIN:-example.com}"
 fi
 
 # Allow username override

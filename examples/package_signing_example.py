@@ -19,8 +19,8 @@ def demo_package_signing():
     print("📦 JPAPI Package Signing Demo")
     print("=" * 50)
 
-    # Example package path
-    package_path = "/Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914.pkg"
+    # Example package path - update to your actual package location
+    package_path = "/path/to/your-package.pkg"
 
     print(f"\n🎯 Target Package: {package_path}")
 
@@ -78,7 +78,7 @@ def demo_workflow():
     print("\n🔄 Complete Package Signing Workflow")
     print("=" * 40)
 
-    package_path = "/Users/charles.hetzel/Desktop/onboardingBundle-chetzel-20250914.pkg"
+    package_path = "/path/to/your-package.pkg"
 
     print("\nStep 1: Check available signing identities")
     print("   jpapi certificate manage --identities")

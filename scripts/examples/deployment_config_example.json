@@ -5,7 +5,7 @@
     {
       "template": "chrome",
       "extension_id": "chlnagmkonfbonegilldifigaelbfcfe",
-      "extension_url": "https://haka-public-production-extension-registry-gzgtuycmtvored.s3.us-east-2.amazonaws.com/manifest-fanduel.xml",
+      "extension_url": "https://your-extension-registry.s3.amazonaws.com/manifest.xml",
       "extension_name": "AIM Security Extension"
     },
     {

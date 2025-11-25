@@ -1,6 +1,7 @@
 """
 Device Matcher Module - Single Responsibility: Match users to devices
 """
+
 from typing import List, Dict, Optional, Any, Tuple
 import sys
 from lib.managers import ComputerManager
@@ -19,7 +20,7 @@ class DeviceMatcher:
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
         """
         Match users to their devices
-        
+
         Returns:
             Tuple of (devices_to_lock, users_not_found)
         """
@@ -30,9 +31,7 @@ class DeviceMatcher:
 
         # Create lookup by hostname for quick matching
         hostname_to_computer = {
-            c.get("name", "").upper(): c
-            for c in all_computers_summary
-            if c.get("name")
+            c.get("name", "").upper(): c for c in all_computers_summary if c.get("name")
         }
 
         devices_to_lock = []
@@ -50,7 +49,7 @@ class DeviceMatcher:
             sys.stdout.flush()
 
             device = self._match_user(username, hostname, hostname_to_computer)
-            
+
             if device:
                 devices_to_lock.append(device)
             else:
@@ -66,7 +65,9 @@ class DeviceMatcher:
 
         # Try hostname first if available (faster, more accurate)
         if hostname:
-            device = self._match_by_hostname(username, hostname, hostname_to_computer, clean_username)
+            device = self._match_by_hostname(
+                username, hostname, hostname_to_computer, clean_username
+            )
             if device:
                 return device
 
@@ -96,7 +97,9 @@ class DeviceMatcher:
         sys.stdout.flush()
 
         try:
-            response = self.auth.api_request("GET", f"/JSSResource/computers/id/{computer_id}")
+            response = self.auth.api_request(
+                "GET", f"/JSSResource/computers/id/{computer_id}"
+            )
             if response and "computer" in response:
                 computer_detail = response["computer"]
                 location = computer_detail.get("location", {})
@@ -109,13 +112,17 @@ class DeviceMatcher:
                     or username.lower() in comp_email
                     or username.lower() == comp_email
                 ):
-                    print(f"   ✅ MATCHED: {computer_summary.get('name')} (ID: {computer_id})")
+                    print(
+                        f"   ✅ MATCHED: {computer_summary.get('name')} (ID: {computer_id})"
+                    )
                     sys.stdout.flush()
                     return {
                         "username": username,
                         "device_id": computer_id,
                         "device_name": computer_summary.get("name", "Unknown"),
-                        "serial": computer_detail.get("general", {}).get("serial_number", "Unknown"),
+                        "serial": computer_detail.get("general", {}).get(
+                            "serial_number", "Unknown"
+                        ),
                         "type": "computer",
                     }
                 else:
@@ -129,7 +136,9 @@ class DeviceMatcher:
 
         return None
 
-    def _match_by_users_api(self, username: str, clean_username: str) -> Optional[Dict[str, Any]]:
+    def _match_by_users_api(
+        self, username: str, clean_username: str
+    ) -> Optional[Dict[str, Any]]:
         """Match user via Users API"""
         print(f"   🔍 Looking up via Users API...")
         sys.stdout.flush()
@@ -151,7 +160,9 @@ class DeviceMatcher:
 
         # Get full computer details for serial
         try:
-            comp_response = self.auth.api_request("GET", f"/JSSResource/computers/id/{computer_id}")
+            comp_response = self.auth.api_request(
+                "GET", f"/JSSResource/computers/id/{computer_id}"
+            )
             serial = (
                 comp_response.get("computer", {})
                 .get("general", {})
@@ -179,7 +190,9 @@ class DeviceMatcher:
             username.lower(),  # Lowercase
             # Title case: Firstname.Lastname@example.com
             (
-                ".".join([part.capitalize() for part in username.split("@")[0].split(".")])
+                ".".join(
+                    [part.capitalize() for part in username.split("@")[0].split(".")]
+                )
                 + "@"
                 + username.split("@")[1]
                 if "@" in username
@@ -191,7 +204,9 @@ class DeviceMatcher:
             try:
                 print(f"      Trying: {email_variant}")
                 sys.stdout.flush()
-                response = self.auth.api_request("GET", f"/JSSResource/users/email/{email_variant}")
+                response = self.auth.api_request(
+                    "GET", f"/JSSResource/users/email/{email_variant}"
+                )
                 if response and "users" in response and len(response["users"]) > 0:
                     print(f"      ✓ Found user by email!")
                     sys.stdout.flush()
@@ -203,7 +218,9 @@ class DeviceMatcher:
         try:
             print(f"      Trying username lookup: {clean_username}")
             sys.stdout.flush()
-            response = self.auth.api_request("GET", f"/JSSResource/users/name/{clean_username}")
+            response = self.auth.api_request(
+                "GET", f"/JSSResource/users/name/{clean_username}"
+            )
             if response and "user" in response:
                 print(f"      ✓ Found user by username")
                 sys.stdout.flush()
@@ -213,7 +230,9 @@ class DeviceMatcher:
 
         return None
 
-    def _extract_computer_from_user(self, user_record: Dict) -> Tuple[Optional[int], str]:
+    def _extract_computer_from_user(
+        self, user_record: Dict
+    ) -> Tuple[Optional[int], str]:
         """Extract computer ID and name from user record"""
         links = user_record.get("links", [])
         computer_id = None
@@ -241,4 +260,3 @@ class DeviceMatcher:
                 computer_name = first_computer.get("name", "Unknown")
 
         return computer_id, computer_name
-
