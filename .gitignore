@@ -43,17 +43,23 @@ storage/cache/
 *.pem
 *.p12
 *.pfx
-*credentials*
-*secret*
-*jwt*
-*token*
 *.env
 .env.*
 
-# Allow auth code but block credential files
-!src/core/auth/
-src/core/auth/*credentials*
-src/core/auth/*secret*
+# Block credential DATA files but NOT source code
+# Use specific patterns to avoid blocking legitimate .py files
+*_credentials.json
+*_credentials.yaml
+*_secret.json
+*_secret.yaml
+*_token.json
+*_token.yaml
+*.jwt
+
+# Allow ALL Python source code in src/
+!src/**/*.py
+
+# Block sensitive config files
 resources/config/authentication.json
 
 # Configuration files with sensitive data
@@ -67,13 +73,17 @@ jpapi.config
 resources/config/authentication.json
 resources/config/users.json
 
-# Company-specific configurations
-*_fanduel*
-*fanduel*
-*FanDuel*
-*internal*
-*test*
-*TEST*
+# Company-specific configurations (data files only, not source code)
+*_fanduel*.json
+*_fanduel*.csv
+*fanduel*.json
+*fanduel*.csv
+
+# Allow test source code
+!tests/
+!tests/**/*.py
+!src/**/test*.py
+!src/**/tests/
 
 # =============================================================================
 # DEVELOPMENT AND BUILD ARTIFACTS
@@ -222,13 +232,16 @@ local/
 *_development*
 *_local*
 
-# Company-specific references (but allow legitimate team setup files)
-*fanduel*
-*FanDuel*
-*FDG*
-*internal*
-*production*
-*PRODUCTION*
+# Company-specific references (data files only)
+# DO NOT block source code with these patterns!
+*_fanduel_*.json
+*_fanduel_*.csv
+*_FDG_*.json
+*_FDG_*.csv
+
+# Allow production-related source code
+!src/**/production*.py
+!scripts/**/production*.py
 
 # Personal information
 *chetzel*
