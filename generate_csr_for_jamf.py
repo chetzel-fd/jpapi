@@ -16,14 +16,14 @@ def generate_csr_for_jamf():
     print("🔐 Generating CSR for Jamf Pro's Built-in CA")
     print("=" * 50)
 
-    # Certificate details
+    # Certificate details - UPDATE THESE FOR YOUR ORGANIZATION
     common_name = "Code Signing Certificate"
-    organization = "FanDuel Group"
+    organization = "Your Organization"
     organizational_unit = "IT Department"
     country = "US"
-    state = "New York"
-    city = "New York"
-    email = "fdg@fanduel.com"
+    state = "Your State"
+    city = "Your City"
+    email = "admin@example.com"
 
     # File paths
     csr_file = "Code_Signing_Certificate_csr.pem"

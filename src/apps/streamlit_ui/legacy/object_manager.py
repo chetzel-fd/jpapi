@@ -684,7 +684,7 @@ def create_export(environment="sandbox"):
                                 """
                             **JAMF Pro Admin Fix:**
                             1. Go to **Settings** → **System Settings** → **API Clients**
-                            2. Find OAuth app: `b5828169-d67d-4bfe-a1f8-89bdecfe92ab`
+                            2. Find your OAuth app (check your credentials)
                             3. Click **Edit** → **Scopes**
                             4. Enable **Advanced Computer Searches** permission
                             5. Save and test again
