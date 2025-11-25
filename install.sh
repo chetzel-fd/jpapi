@@ -227,11 +227,35 @@ test_installation() {
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
     
-    # Test jpapi command
-    if "$VENV_DIR/bin/jpapi" --version >/dev/null 2>&1; then
+    # First, verify entry point exists
+    if [ ! -f "$VENV_DIR/bin/jpapi" ]; then
+        print_error "Entry point file not found: $VENV_DIR/bin/jpapi"
+        print_error "Installation may have failed silently"
+        exit 1
+    fi
+    
+    # Test jpapi command and capture output
+    print_info "Running: $VENV_DIR/bin/jpapi --version"
+    OUTPUT=$("$VENV_DIR/bin/jpapi" --version 2>&1)
+    EXIT_CODE=$?
+    
+    if [ $EXIT_CODE -eq 0 ]; then
         print_success "JPAPI is working correctly"
+        echo "$OUTPUT"
     else
-        print_error "JPAPI installation test failed"
+        print_error "JPAPI installation test failed (exit code: $EXIT_CODE)"
+        echo
+        print_error "Error output:"
+        echo "$OUTPUT"
+        echo
+        print_info "Checking entry point script:"
+        head -10 "$VENV_DIR/bin/jpapi"
+        echo
+        print_info "Attempting to import jpapi_main module directly:"
+        python3 -c "import jpapi_main; print('Import successful')" 2>&1 || print_error "Direct import also failed"
+        echo
+        print_info "Checking Python path:"
+        python3 -c "import sys; print('\n'.join(sys.path))" 2>&1
         exit 1
     fi
 }

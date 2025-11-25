@@ -27,6 +27,8 @@ setup(
     # Pure src/ layout - all packages are in src/
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    # Include standalone modules (not in packages)
+    py_modules=["jpapi_main"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: System Administrators",
