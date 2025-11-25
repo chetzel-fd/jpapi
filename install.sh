@@ -260,6 +260,22 @@ create_symlink() {
     fi
     
     print_success "Symlink created"
+    
+    # Show usage instructions
+    echo
+    print_info "Installation complete! To use jpapi:"
+    echo
+    echo "  Option 1: Use the full path:"
+    echo "    $VENV_DIR/bin/jpapi --help"
+    echo
+    echo "  Option 2: Add to PATH and reload shell:"
+    echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "    source ~/.bashrc  # or source ~/.zshrc"
+    echo "    jpapi --help"
+    echo
+    echo "  Option 3: Create an alias:"
+    echo "    alias jpapi=\"$VENV_DIR/bin/jpapi\""
+    echo
 }
 
 # Test installation
@@ -283,7 +299,7 @@ test_installation() {
     
     if [ $EXIT_CODE -eq 0 ]; then
         print_success "JPAPI is working correctly"
-        echo "$OUTPUT"
+        echo "Version output: $OUTPUT"
     else
         print_error "JPAPI installation test failed (exit code: $EXIT_CODE)"
         echo
@@ -332,15 +348,20 @@ main() {
     echo
     print_success "🎉 JPAPI installed successfully!"
     echo
-    echo "Next steps:"
-    echo "1. Run: jpapi setup"
-    echo "2. Configure your JAMF Pro credentials"
-    echo "3. Test with: jpapi --help"
-    echo
     echo "JPAPI is installed in: $INSTALL_DIR"
     echo "Virtual environment: $VENV_DIR"
+    echo "Symlink location: $HOME/.local/bin/jpapi"
     echo
-    print_warning "If 'jpapi' command not found, run: source ~/.bashrc"
+    echo "Next steps:"
+    echo "1. To use jpapi, either:"
+    echo "   - Use full path: $VENV_DIR/bin/jpapi setup"
+    echo "   - Or add to PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "   - Then reload shell: source ~/.bashrc (or source ~/.zshrc)"
+    echo
+    echo "2. Run: jpapi setup (or $VENV_DIR/bin/jpapi setup)"
+    echo "3. Configure your JAMF Pro credentials"
+    echo "4. Test with: jpapi --help"
+    echo
 }
 
 # Run main function
