@@ -33,48 +33,6 @@ jpapi list policies --help
 
 ---
 
-## 🍺 **Homebrew (macOS)**
-
-For macOS users who prefer Homebrew:
-
-```bash
-# Add the tap
-brew tap chetzel-fd/jpapi
-
-# Install JPAPI
-brew install jpapi
-```
-
----
-
-## 🐳 **Docker**
-
-Perfect for isolated environments or CI/CD:
-
-### Quick Run
-```bash
-# Run JPAPI in a container
-docker run -it --rm jpapi/jpapi:latest
-```
-
-### With Docker Compose
-```bash
-# Clone the repository
-git clone https://github.com/chetzel-fd/jpapi.git
-cd jpapi
-
-# Start with Docker Compose
-docker-compose up jpapi
-```
-
-### Persistent Configuration
-```bash
-# Mount config directory for persistence
-docker run -it --rm \
-  -v ~/.jpapi:/home/jpapi/.jpapi \
-  jpapi/jpapi:latest
-```
-
 ---
 
 ## 🐍 **Python Package Manager**

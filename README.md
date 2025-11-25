@@ -9,29 +9,13 @@ A powerful, user-friendly toolkit for JAMF Pro API management with enterprise-gr
 
 ### 🎯 **Super Easy Installation**
 
-Choose your preferred method:
-
 #### **Option 1: One-Line Install (Recommended)**
 ```bash
-# Install JPAPI in one command
 curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 ```
 
-#### **Option 2: Homebrew (macOS)**
+#### **Option 2: Manual Installation**
 ```bash
-# Install via Homebrew
-brew install chetzel-fd/jpapi/jpapi
-```
-
-#### **Option 3: Docker**
-```bash
-# Run with Docker
-docker run -it --rm chetzel-fd/jpapi:latest
-```
-
-#### **Option 4: Manual Installation**
-```bash
-# Clone and install manually
 git clone https://github.com/chetzel-fd/jpapi.git
 cd jpapi
 python3 -m venv venv
