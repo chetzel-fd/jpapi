@@ -63,11 +63,21 @@ check_permissions() {
     echo -e "${GREEN}✅ Permissions look good${NC}"
 }
 
-# Check if Python 3 is available
+# Check if Python 3 is available and version is compatible
 check_python() {
     if command -v python3 >/dev/null 2>&1; then
         PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
-        print_success "Python $PYTHON_VERSION found"
+        PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f1)
+        PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d'.' -f2)
+        
+        # Check if version is >= 3.8
+        if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 8 ]); then
+            print_error "Python 3.8+ is required, but found Python $PYTHON_VERSION"
+            echo "Please install Python 3.8+ from https://python.org"
+            exit 1
+        fi
+        
+        print_success "Python $PYTHON_VERSION found (compatible)"
         return 0
     else
         print_error "Python 3 is required but not found"
@@ -138,8 +148,33 @@ setup_repository() {
 setup_venv() {
     print_warning "Setting up Python virtual environment..."
     
+    # Get system Python version
+    SYSTEM_PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+    
     if [[ -d "$VENV_DIR" ]]; then
-        print_warning "Virtual environment exists, updating..."
+        # Check if venv Python version matches system Python version
+        if [[ -f "$VENV_DIR/bin/python3" ]]; then
+            VENV_PYTHON_VERSION=$("$VENV_DIR/bin/python3" --version 2>/dev/null | cut -d' ' -f2)
+            
+            if [[ "$VENV_PYTHON_VERSION" != "$SYSTEM_PYTHON_VERSION" ]]; then
+                print_warning "Python version mismatch detected!"
+                print_warning "System Python: $SYSTEM_PYTHON_VERSION"
+                print_warning "Venv Python: $VENV_PYTHON_VERSION"
+                print_warning "Recreating virtual environment with system Python version..."
+                
+                # Remove old venv
+                rm -rf "$VENV_DIR"
+                
+                # Create new venv with system Python
+                python3 -m venv "$VENV_DIR"
+            else
+                print_warning "Virtual environment exists, updating..."
+            fi
+        else
+            print_warning "Virtual environment exists but appears corrupted, recreating..."
+            rm -rf "$VENV_DIR"
+            python3 -m venv "$VENV_DIR"
+        fi
     else
         python3 -m venv "$VENV_DIR"
     fi
@@ -147,10 +182,17 @@ setup_venv() {
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
     
+    # Verify venv Python version matches system
+    VENV_PYTHON_VERSION=$(python --version 2>&1 | cut -d' ' -f2)
+    if [[ "$VENV_PYTHON_VERSION" != "$SYSTEM_PYTHON_VERSION" ]]; then
+        print_error "Virtual environment Python version ($VENV_PYTHON_VERSION) does not match system Python ($SYSTEM_PYTHON_VERSION)"
+        exit 1
+    fi
+    
     # Upgrade pip
     pip install --upgrade pip
     
-    print_success "Virtual environment ready"
+    print_success "Virtual environment ready (Python $VENV_PYTHON_VERSION)"
 }
 
 # Install JPAPI
