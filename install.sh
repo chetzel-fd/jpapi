@@ -161,7 +161,18 @@ setup_repository() {
     if [[ -d "$INSTALL_DIR" ]]; then
         print_warning "JPAPI directory exists, updating..."
         cd "$INSTALL_DIR"
+        
+        # Store current commit to detect if update happened
+        OLD_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
+        
         git pull origin main
+        
+        # Check if code was updated
+        NEW_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "")
+        if [[ "$OLD_COMMIT" != "$NEW_COMMIT" ]] && [[ -n "$OLD_COMMIT" ]]; then
+            print_warning "Repository updated (new commits pulled)"
+            print_warning "Package will be reinstalled to pick up changes"
+        fi
     else
         print_warning "Cloning JPAPI repository..."
         git clone "$REPO_URL" "$INSTALL_DIR"
@@ -240,6 +251,21 @@ install_jpapi() {
     
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
+    
+    # Check if critical __init__.py files exist (package structure fix)
+    MISSING_INIT_FILES=()
+    for init_file in "src/core/__init__.py" "src/core/auth/__init__.py" "src/core/checks/__init__.py" "src/core/logging/__init__.py"; do
+        if [ ! -f "$INSTALL_DIR/$init_file" ]; then
+            MISSING_INIT_FILES+=("$init_file")
+        fi
+    done
+    
+    # If critical files are missing, force reinstall
+    if [ ${#MISSING_INIT_FILES[@]} -gt 0 ]; then
+        print_warning "Package structure files missing, forcing reinstall..."
+        print_warning "Missing files: ${MISSING_INIT_FILES[*]}"
+        pip uninstall -y jpapi 2>/dev/null || true
+    fi
     
     # Install in editable mode with error checking
     print_info "Running: pip install -e ."
