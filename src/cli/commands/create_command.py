@@ -1340,10 +1340,13 @@ Profile Creation Summary:
                 # Parse email addresses and create separate criteria for each
                 emails = self._parse_email_addresses(criterion_value)
                 if emails:
+                    # Get email domain from environment or use generic default
+                    import os
+                    email_domain = os.environ.get("JPAPI_EMAIL_DOMAIN", "example.com")
                     for j, email in enumerate(emails):
-                        # Add @fanduel.com if not already present
+                        # Add domain if not already present
                         if "@" not in email:
-                            full_email = f"{email}@fanduel.com"
+                            full_email = f"{email}@{email_domain}"
                         else:
                             full_email = email
 

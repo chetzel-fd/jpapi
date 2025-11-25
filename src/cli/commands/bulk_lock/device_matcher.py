@@ -177,7 +177,7 @@ class DeviceMatcher:
         email_variations = [
             username,  # Original
             username.lower(),  # Lowercase
-            # Title case: Jacob.Sanchez@fanduel.com
+            # Title case: Firstname.Lastname@example.com
             (
                 ".".join([part.capitalize() for part in username.split("@")[0].split(".")])
                 + "@"
