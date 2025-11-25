@@ -38,8 +38,8 @@ jpapi list policies --help
 For macOS users who prefer Homebrew:
 
 ```bash
-# Add the FanDuel tap
-brew tap fanduel/jpapi
+# Add the tap
+brew tap chetzel-fd/jpapi
 
 # Install JPAPI
 brew install jpapi
@@ -54,13 +54,13 @@ Perfect for isolated environments or CI/CD:
 ### Quick Run
 ```bash
 # Run JPAPI in a container
-docker run -it --rm fanduel/jpapi:latest
+docker run -it --rm jpapi/jpapi:latest
 ```
 
 ### With Docker Compose
 ```bash
 # Clone the repository
-git clone https://github.com/fanduel/jpapi.git
+git clone https://github.com/chetzel-fd/jpapi.git
 cd jpapi
 
 # Start with Docker Compose
@@ -72,7 +72,7 @@ docker-compose up jpapi
 # Mount config directory for persistence
 docker run -it --rm \
   -v ~/.jpapi:/home/jpapi/.jpapi \
-  fanduel/jpapi:latest
+  jpapi/jpapi:latest
 ```
 
 ---
@@ -105,7 +105,7 @@ For development or custom setups:
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/fanduel/jpapi.git
+git clone https://github.com/chetzel-fd/jpapi.git
 cd jpapi
 ```
 
@@ -196,7 +196,7 @@ chmod +x ~/.local/bin/jpapi
 ### One-Line Install
 ```bash
 # Re-run the installer (it will update)
-curl -sSL https://raw.githubusercontent.com/fanduel/jpapi/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/chetzel-fd/jpapi/main/install.sh | bash
 ```
 
 ### Homebrew
@@ -252,7 +252,7 @@ pip install -e ".[dev,all]"
 ### Offline Installation
 ```bash
 # Download and install offline
-wget https://github.com/fanduel/jpapi/archive/main.zip
+wget https://github.com/chetzel-fd/jpapi/archive/main.zip
 unzip main.zip
 cd jpapi-main
 pip install -e .
@@ -274,4 +274,4 @@ After installation:
 **Need Help?** 
 - Run `jpapi doctor` for diagnostics
 - Check the [Troubleshooting Guide](docs/troubleshooting.md)
-- Open an [issue on GitHub](https://github.com/fanduel/jpapi/issues)
+- Open an [issue on GitHub](https://github.com/chetzel-fd/jpapi/issues)
